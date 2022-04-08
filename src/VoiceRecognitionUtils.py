@@ -6,10 +6,6 @@ from spacy import displacy
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
 
 
-# from spacy.tokenizer import Tokenizer 
-# from spacy.lang.en import English
-
-
 def recogniseSpeech():
 
     r = sr.Recognizer()
@@ -73,7 +69,7 @@ def processSpeech(input):
 
     (action, subject, direct_object, indirect_object) = identifyActionsAndObjects(speech)
     print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object )     
-    return action, subject, direct_object, indirect_object
+    return action.replace(" ", "_"), subject, direct_object, indirect_object
 
     
 def getSynsetsList(word):

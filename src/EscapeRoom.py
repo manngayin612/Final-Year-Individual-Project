@@ -10,6 +10,7 @@ import json
 
 voice_input = False
 test = False
+success = False
 objects=[]
 current_room_items = ["key", "door", "table"]
 bag = []
@@ -18,20 +19,13 @@ def initialiseRoom():
     f = open("room_details.json")
     data = json.load(f)
     f.close()
-    # objects = [items['name'] for items in data["items_in_rooms"]]
 
+    door = Item("door", actions=["unlock", "open"], status=["locked", "unlocked"])
+    door.setSpecialTool("unlock", "key")
+    key = Item("key", actions=["pick_up"])
+    table = Item("table")
+    objects.extend([door, key, table])
 
-
-    key = Item("key", "pick_up")
-    door = Item("door", "open")
-    table = Item("table", "look")
-    objects.extend([key, door, table])
-
-    
-
-
-    # for i in data["items_in_rooms"]:
-    #     objects.append(Item(i["name"], i["action"]))
 
 
 # f = open('room_details.json')
@@ -46,15 +40,28 @@ def findItems(item):
     for obj in objects:
         if item == obj.getName():
             return obj
-    return "No such item"
+    return "No such item in the room"
 
 def processAction(action, subject, direct_object, indirect_object):
 
     item = findItems(direct_object)
-    if action in vr.getSynsetsList(item.getAction()):
-        current_room_items.remove(item.getName())
-        bag.append(item.getName())
+
+
+
+    for a in item.getActions():
+        print(a)
+        if action in vr.getSynsetsList(a):
+            if a == "pick_up":
+                bag.append(item.getName())
+                current_room_items.remove(item.getName())
+            elif a == "investigate":
+                print(item.getDescription())
     
+    if item.getName() == "door" and action in vr.getSynsetsList("unlock"):
+        item.setCurrentStatus("unlocked")
+        print(item.getName(), item.getCurrentStatus())
+        
+        
     print(current_room_items, bag)
 
 
@@ -80,7 +87,8 @@ if __name__ == "__main__":
 
     if not test:
         initialiseRoom()
-        while True:
+        while not success:
+
   
             
             if voice_input:
@@ -94,8 +102,12 @@ if __name__ == "__main__":
 
             processAction(action, subject, direct_object, indirect_object)
 
+            success = objects[0].getCurrentStatus() =="unlocked"
+
+
+        print("end of game")
     else:
         initialiseRoom()
         print(objects)
             
-    # con.close()
+
