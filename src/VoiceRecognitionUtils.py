@@ -31,9 +31,9 @@ def recogniseSpeech():
 
 
 def identifyActionsAndObjects(speech):
-    print("DETAILS OF SPEECH")
-    for token in speech:
-        print(token.text, token.pos_, token.dep_, token.head.text)
+    # print("DETAILS OF SPEECH")
+    # for token in speech:
+    #     print(token.text, token.pos_, token.dep_, token.head.text)
     
     action = ""
     subject = ""
@@ -41,6 +41,7 @@ def identifyActionsAndObjects(speech):
     indirect_object = ""
 
     for token in speech:
+        print(token, action, subject, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             action = token.text
         elif(token.dep_ == 'dobj'):
@@ -52,7 +53,7 @@ def identifyActionsAndObjects(speech):
         elif(token.head.text == action and token.pos_ == "ADP" ):
             action += " " + token.text
 
-    print("------------SUMMARY-------------")
+    # print("------------SUMMARY-------------")
     return action, subject, direct_object, indirect_object
 
 
@@ -61,11 +62,11 @@ def processSpeech(input):
     en_nlp = spacy.load('en_core_web_sm')
     speech =  en_nlp(input)
 
-    for label in en_nlp.get_pipe("parser").labels:
-        print(label, " -- ", spacy.explain(label))
+    # for label in en_nlp.get_pipe("parser").labels:
+    #     print(label, " -- ", spacy.explain(label))
         
 
-    print("--------------------------------------")
+    # print("--------------------------------------")
 
     (action, subject, direct_object, indirect_object) = identifyActionsAndObjects(speech)
     print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object )     

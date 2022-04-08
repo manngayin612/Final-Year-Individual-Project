@@ -9,7 +9,7 @@ import json
 # from nltk.corpus import wordnet as wn
 
 voice_input = False
-test = False
+test = True
 success = False
 objects=[]
 current_room_items = ["key", "door", "table"]
@@ -21,7 +21,7 @@ def initialiseRoom():
     f.close()
 
     door = Item("door", actions=["unlock", "open"], status=["locked", "unlocked"])
-    door.setSpecialTool("unlock", "key")
+    # door.setSpecialTool("unlock", "key")
     key = Item("key", actions=["pick_up"])
     table = Item("table")
     objects.extend([door, key, table])
@@ -54,12 +54,16 @@ def processAction(action, subject, direct_object, indirect_object):
             if a == "pick_up":
                 bag.append(item.getName())
                 current_room_items.remove(item.getName())
+            elif a == "unlock":
+                if item.getName() == "door":
+                    if objects[1].getName() in bag:
+                        item.setCurrentStatus("unlocked")
+                    else:
+                        print("The door is locked")
+
             elif a == "investigate":
                 print(item.getDescription())
-    
-    if item.getName() == "door" and action in vr.getSynsetsList("unlock"):
-        item.setCurrentStatus("unlocked")
-        print(item.getName(), item.getCurrentStatus())
+
         
         
     print(current_room_items, bag)
@@ -81,7 +85,8 @@ def processAction(action, subject, direct_object, indirect_object):
     #     print("what do you want me to do?")
     # print(objects)
     # print(bag)
-        
+def doorUnlockedByKey():
+    return objects[0].getCurrentStatus() == "unlocked" 
 
 if __name__ == "__main__":
 
@@ -102,12 +107,13 @@ if __name__ == "__main__":
 
             processAction(action, subject, direct_object, indirect_object)
 
-            success = objects[0].getCurrentStatus() =="unlocked"
+            success = doorUnlockedByKey()
 
 
         print("end of game")
     else:
-        initialiseRoom()
+        i = input("please input: ")
+        action, subject, direct_object, indirect_object = vr.processSpeech(i)
         print(objects)
             
 

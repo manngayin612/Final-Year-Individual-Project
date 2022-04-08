@@ -30,6 +30,6 @@ class Item:
     def getDescription(self):
         return self.__description
 
-    def setSpecialTool(self, action, tool):
-        self.__actions[action] = tool
+    # def setSpecialTool(self, action, tool):
+    #     self.__actions[action] = tool
 
