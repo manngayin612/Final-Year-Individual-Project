@@ -35,23 +35,23 @@ def identifyActionsAndObjects(speech):
     # for token in speech:
     #     print(token.text, token.pos_, token.dep_, token.head.text)
     
-    action = ""
-    subject = ""
-    direct_object = ""
-    indirect_object = ""
+    action = []
+    subject = []
+    direct_object = []
+    indirect_object = []
 
     for token in speech:
         print(token, action, subject, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
-            action = token.text
+            action.append(token.text)
         elif(token.dep_ == 'dobj'):
-            direct_object = token.text 
+            direct_object.append(token.text) 
         elif(token.dep_ == 'pobj'):
             subject = token.text 
         elif(token.dep_ == 'dative'):
             indirect_object = token.text
-        elif(token.head.text == action and token.pos_ == "ADP" ):
-            action += " " + token.text
+        elif(token.head.text == action[len(action)-1] and token.pos_ == "ADP" ):
+            action[len(action)-1] += "_" + token.text
 
     # print("------------SUMMARY-------------")
     return action, subject, direct_object, indirect_object
@@ -70,7 +70,10 @@ def processSpeech(input):
 
     (action, subject, direct_object, indirect_object) = identifyActionsAndObjects(speech)
     print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object )     
-    return action.replace(" ", "_"), subject, direct_object, indirect_object
+    # sent_summary = zip(action, subject, direct_object, indirect_object)
+
+    # return action, subject, direct_object, indirect_object
+    return zip(action, direct_object)
 
     
 def getSynsetsList(word):

@@ -9,7 +9,7 @@ import json
 # from nltk.corpus import wordnet as wn
 
 voice_input = False
-test = True
+test = False
 success = False
 objects=[]
 current_room_items = ["key", "door", "table"]
@@ -42,31 +42,61 @@ def findItems(item):
             return obj
     return "No such item in the room"
 
-def processAction(action, subject, direct_object, indirect_object):
+# def processAction(action, subject, direct_object, indirect_object):
 
-    item = findItems(direct_object)
+#     item = findItems(direct_object)
 
 
 
-    for a in item.getActions():
-        print(a)
-        if action in vr.getSynsetsList(a):
-            if a == "pick_up":
-                bag.append(item.getName())
-                current_room_items.remove(item.getName())
-            elif a == "unlock":
-                if item.getName() == "door":
-                    if objects[1].getName() in bag:
-                        item.setCurrentStatus("unlocked")
-                    else:
-                        print("The door is locked")
+#     for a in item.getActions():
+#         print(a)
+#         if action in vr.getSynsetsList(a):
+#             if a == "pick_up":
+#                 bag.append(item.getName())
+#                 current_room_items.remove(item.getName())
+#             elif a == "unlock":
+#                 if item.getName() == "door":
+#                     if objects[1].getName() in bag:
+#                         item.setCurrentStatus("unlocked")
+#                     else:
+#                         print("The door is locked")
 
-            elif a == "investigate":
-                print(item.getDescription())
+#             elif a == "investigate":
+#                 print(item.getDescription())
 
         
         
-    print(current_room_items, bag)
+#     print(current_room_items, bag)
+
+def processAction(actions_dobjects):
+    
+    for (action, direct_object) in actions_dobjects:
+
+
+        item = findItems(direct_object)
+
+
+
+        for a in item.getActions():
+            print(a)
+            if action in vr.getSynsetsList(a):
+                if a == "pick_up":
+                    bag.append(item.getName())
+                    current_room_items.remove(item.getName())
+                elif a == "unlock":
+                    if item.getName() == "door":
+                        if objects[1].getName() in bag:
+                            item.setCurrentStatus("unlocked")
+                        else:
+                            print("The door is locked")
+
+                elif a == "investigate":
+                    print(item.getDescription())
+
+            
+            
+        print(current_room_items, bag)
+
 
 
         
@@ -103,9 +133,10 @@ if __name__ == "__main__":
                 user_input = input("Waiting for input... ")
                 print("Input is \"" + user_input + "\"")
 
-            action, subject, direct_object, indirect_object = vr.processSpeech(user_input)
+            actions_dobjects = vr.processSpeech(user_input)
 
-            processAction(action, subject, direct_object, indirect_object)
+            # processAction(action, subject, direct_object, indirect_object)
+            processAction(actions_dobjects)
 
             success = doorUnlockedByKey()
 
@@ -113,7 +144,8 @@ if __name__ == "__main__":
         print("end of game")
     else:
         i = input("please input: ")
-        action, subject, direct_object, indirect_object = vr.processSpeech(i)
-        print(objects)
+        actions_dobjects = vr.processSpeech(i)
+        for i in actions_dobjects:
+            print(i)
             
 
