@@ -1,0 +1,6 @@
+{ "items_in_rooms": [
+        {"name": "key", "action": "pick_up"},
+        {"name": "door", "action": "open"},
+        {"name": "table", "action": "look"}
+    ]
+}

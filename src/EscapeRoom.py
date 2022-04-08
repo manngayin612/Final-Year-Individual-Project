@@ -1,5 +1,8 @@
 from py import process
 import VoiceRecognitionUtils as vr 
+from Item import Item
+import json
+
 # import nltk
 # nltk.download('wordnet', force=True)
 # nltk.download('omw-1.4', force=True)
@@ -7,93 +10,92 @@ import VoiceRecognitionUtils as vr
 
 voice_input = False
 test = False
-
-
-objects = ["table","door", "key"]
+objects=[]
+current_room_items = ["key", "door", "table"]
 bag = []
 
+def initialiseRoom():
+    f = open("room_details.json")
+    data = json.load(f)
+    f.close()
+    # objects = [items['name'] for items in data["items_in_rooms"]]
 
-# def createRoom(con):
-#     print("Setting up the room....")
-#     cur = con.cursor()
 
-#     # Create table
-#     cur.execute('''CREATE TABLE objects
-#                (name text, colour text, qty real)''')
-#     con.commit()
 
-# def check_synonyms(word1, word2):
-#     print(wn.synsets('pick_up', pos=wn.VERB))
-#     word = wn.synsets('pick_up', pos=wn.VERB)[1]
-#     for syn in wn.synsets(word1):
-#         print(syn)
-#         is_synonym = False
-#         for lemma in syn.lemma_names():
-#             if lemma == word2 and lemma != word1:
-#                 is_synonym = True
-#                 return True
-#     return False
+    key = Item("key", "pick_up")
+    door = Item("door", "open")
+    table = Item("table", "look")
+    objects.extend([key, door, table])
 
-# # return a score denoting how similar two word senses are
-# def check_similarity(word1, word2):
-#     print(wn.synsets('pick_up', pos=wn.VERB)[1].definition())
-#     word = wn.synsets('pick_up', pos=wn.VERB)[1]
-#     for synsets in wn.synsets(word2, pos=wn.VERB):
-#         print(word.definition())
-#         print(synsets.definition(),synsets.path_similarity(word))
+    
 
-#     # word1_synset = wn.synset('collect.v.01')
-#     # word2_synset = wn.synset('pick_up.v.02')
-#     # print(word1_synset.path_similarity(word))
+
+    # for i in data["items_in_rooms"]:
+    #     objects.append(Item(i["name"], i["action"]))
+
+
+# f = open('room_details.json')
+# data = json.load(f)
+# f.close()
+
+# objects = [items['name'] for items in data["items_in_rooms"]]
+
+# print("Room Created!")
+
+def findItems(item):
+    for obj in objects:
+        if item == obj.getName():
+            return obj
+    return "No such item"
 
 def processAction(action, subject, direct_object, indirect_object):
-    if action == "pick up" or action in vr.getSynsetsList("pick_up"):
-        if direct_object in objects:
-            objects.remove(direct_object)
-            bag.append(direct_object)
-        else: 
-            print("No such object")
-    else:
-        print("what do you want me to do?")
-    print(objects)
-    print(bag)
+
+    item = findItems(direct_object)
+    if action in vr.getSynsetsList(item.getAction()):
+        current_room_items.remove(item.getName())
+        bag.append(item.getName())
+    
+    print(current_room_items, bag)
+
+
         
+    
+        
+    
+    # if action == "pick up" or action in vr.getSynsetsList("pick_up"):
 
+    #     if direct_object in objects:
+    #         objects.remove(direct_object)
+    #         bag.append(direct_object)
 
-
-
-
+    #     else: 
+    #         print("No such object")
+    # else:
+    #     print("what do you want me to do?")
+    # print(objects)
+    # print(bag)
+        
 
 if __name__ == "__main__":
 
-    # con = sqlite3.connect('EscapeRoom.db')
-    # createRoom(con)
     if not test:
-        print("Room Created!")
+        initialiseRoom()
+        while True:
+  
+            
+            if voice_input:
+                user_input = vr.recogniseSpeech()
+                print("Google Speech Recognition thinks you said \"" + user_input + "\"")
+            else :
+                user_input = input("Waiting for input... ")
+                print("Input is \"" + user_input + "\"")
 
-        if voice_input:
-            input = vr.recogniseSpeech()
-            print("Google Speech Recognition thinks you said \"" + input + "\"")
-        else :
-            input = input("Waiting for input... ")
-            print("Input is \"" + input + "\"")
+            action, subject, direct_object, indirect_object = vr.processSpeech(user_input)
 
-        action, subject, direct_object, indirect_object = vr.processSpeech(input)
+            processAction(action, subject, direct_object, indirect_object)
 
-        processAction(action, subject, direct_object, indirect_object)
-
-        # if action == "pick up" or check_synonyms("pick up", action):
-        #     if direct_object in objects:
-        #         objects.remove(direct_object)
-        #         bag.append(direct_object)
-        #     else: 
-        #         print("No such object")
-        # else:
-        #     print("what do you want me to do?")
-        # print(objects)
-        # print(bag)
     else:
-        # check_similarity("pick up", "put_down")
-        vr.getSynsetsList("collect")
-        
+        initialiseRoom()
+        print(objects)
+            
     # con.close()
