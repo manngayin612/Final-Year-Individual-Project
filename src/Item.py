@@ -12,12 +12,11 @@ class Item:
         self.__status = status
         self.__currentStatus = "" if status == [] else status[0]
         self.__description = description
-        self.__def = action_def
         
     def getItemDef(self):
         return self.__item_def
 
-        
+
     def getActions(self):
         return self.__actions.items()
 
@@ -34,10 +33,3 @@ class Item:
     def getDescription(self):
         return self.__description
     
-
-
-    
-
-    # def setSpecialTool(self, action, tool):
-    #     self.__actions[action] = tool
-
