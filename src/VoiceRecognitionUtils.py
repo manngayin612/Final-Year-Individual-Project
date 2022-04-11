@@ -82,34 +82,12 @@ def getSynsetsList(word):
     token = nlp(word)[0]
 
     synsets = token._.wordnet.synsets()
+    # print(word)
+    # for ss in synsets:
+    #     for hyper in ss.hypernyms():
+    #         print(ss,hyper)
     lemmas_for_synsets = [lemma for s in synsets for lemma in s.lemma_names()]
-    return set(lemmas_for_synsets)
+    hypernyms = [hyper for s in synsets for hyper_synset in s.hypernyms() for hyper in hyper_synset.lemma_names()]
+    # TODO: Filter the ones with low similarity
+    return set(lemmas_for_synsets+hypernyms)
 
-
-
-
-
-
-# if __name__ == "__main__":
-
-#     if voice_input:
-#         input = recogniseSpeech()
-#         print("Google Speech Recognition thinks you said \"" + input + "\"")
-#     else :
-#         input = input("Waiting for input... ")
-#         print("Input is \"" + input + "\"")
-
-    
-
-
-    
-
-
-    
-
-
-
-    # Test similarity
-
-
-    
