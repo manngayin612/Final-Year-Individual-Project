@@ -13,7 +13,7 @@ def recogniseSpeech():
     # Get audio from microphone
     with sr.Microphone() as source:
         print("Recording voice...")
-        audio = r.listen(source)
+        audio = r.listen(source,timeout=8,phrase_time_limit=8)
 
     # Recognise Speech by Google Speech Recognition
     try:
@@ -21,6 +21,7 @@ def recogniseSpeech():
         # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
         # instead of `r.recognize_google(audio)`
         speech = r.recognize_google(audio)
+        print("Result of Google Speech Recognition: {}".format(speech))
         return speech
     except sr.UnknownValueError:
         print("Google Speech Recognition could not understand audio")

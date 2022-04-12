@@ -12,7 +12,7 @@ import sys
 
 voice_input = False
 test = False
-success = False
+
 objects=[]
 current_room_items = ["key", "door", "table"]
 bag = []
@@ -21,16 +21,17 @@ threshold = 0.2
 #Initialising the game screen
 pygame.init()
 SQUARESIZE = 100
-width = 7 * SQUARESIZE
-height = 7 * SQUARESIZE
-size = (width, height)
+screen_width = 7 * SQUARESIZE
+screen_height = 7 * SQUARESIZE
+size = (screen_width, screen_height)
 
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Escape Room")
 
 
 font = pygame.font.Font(pygame.font.get_default_font(), 50)
-small_font = pygame.font.Font(pygame.font.get_default_font(), 10)
+medium_font = pygame.font.Font(pygame.font.get_default_font(), 30)
+small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
 
 def initialiseRoom():
@@ -55,16 +56,19 @@ def getItem(item_name):
 
 def identifyObject(item):
     max_similarity = 0
-    matching_obj = ""
-    for obj in objects:
+    matching_obj_index = -1
+    for i in range(len(objects)):
+        print(i, objects[i].getName())
         for ss in wn.synsets(item, pos=wn.NOUN):
             if(ss.name().split(".")[0] == item):
-                current_similarity = ss.lch_similarity(wn.synset(obj.getItemDef()))
+                current_similarity = ss.lch_similarity(wn.synset(objects[i].getItemDef()))
                 if current_similarity > max_similarity:
                     max_similarity = current_similarity
-                    matching_obj = obj
-    print("Input Item: {} ==> Identified Item: {}".format(item, matching_obj.getName()))
-    return matching_obj
+                    matching_obj_index = i
+    print(matching_obj_index)
+    identified_obj = objects[matching_obj_index]
+    print("Input Item: {} ==> Identified Item: {}".format(item, identified_obj.getName()))
+    return identified_obj
 
 
 def identifyAction(action, item):
@@ -104,7 +108,7 @@ def processAction(actions_dobjects):
 def doorUnlockedByKey():
     return objects[0].getCurrentStatus() == "unlocked" 
 
-def create_button(text, x, y, width, height, hovercolour, defaultcolour):
+def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     mouse = pygame.mouse.get_pos()
 
     click = pygame.mouse.get_pressed(3)
@@ -116,8 +120,8 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour):
     else:
         pygame.draw.rect(screen, defaultcolour, (x,y,width,height))
 
-    buttontext = small_font.render(text, True, (255,255,255))
-    screen.blit(buttontext, (int(890+(width/2)), int (y + (y/2))))
+    buttontext = font.render(text, True, (0,0,255))
+    screen.blit(buttontext, ((screen_width-buttontext.get_width())/2, (screen_height-buttontext.get_height())/2))
 
 
 def titleScreen():
@@ -125,10 +129,10 @@ def titleScreen():
 
     while True:
         screen.fill((0,0,0))
-        screen.blit(text, ((width - text.get_width()) /2, 0))
+        screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        create_button("Start", width-130, 7, 125, 26, (255,255,255), (255,255,0))
+        create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -136,19 +140,70 @@ def titleScreen():
                 sys.exit()
         pygame.display.update()
 
+
+# Content of the first room
 def firstRoom():
-    text = font.render("Welcome to the first room", True, (255,255,255))
+    # Title of the room
+    title_text = font.render("Welcome to the first room", True, (255,255,255))
 
-    while True:
-        screen.fill((0,0,0))
-        screen.blit(text, ((width-text.get_width())/2, 0))
+    # Description of the room
+    description = small_font.render("There is a key on the table. The door is locked.", True, (255,255,255))
+
+    # Input Rectangle
+    rect_width = screen_width-100
+    rect_height = screen_height/4
+    input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
     
+    user_input = ""
+    success = False
+    clock = pygame.time.Clock()
+
+    initialiseRoom()
+
+    while not success:
+        screen.fill((0,0,0))
+        screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
+        screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        pygame.display.update()
 
+            #TODO: is there a way to switch between voice and keyboard more freely?
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                (mouse_x, mouse_y) = pygame.mouse.get_pos()
+                if input_rect.collidepoint(mouse_x, mouse_y):
+                    user_input = vr.recogniseSpeech()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE:
+                    user_input = user_input[:-1]
+                elif event.key == pygame.K_RETURN:
+
+                    print(user_input)
+
+                    actions_dobjects = vr.processSpeech(user_input)
+           
+             # processAction(action, subject, direct_object, indirect_object)
+                    processAction(actions_dobjects)
+
+                    success = doorUnlockedByKey()
+
+                    print("end of game")
+                    user_input = ""
+
+                else:
+                    user_input +=event.unicode
+
+    
+
+        
+        pygame.draw.rect(screen, (255,255,0), input_rect)
+        text_surface = medium_font.render(user_input, True, (255, 0, 255))
+        screen.blit(text_surface,input_rect.topleft)
+        pygame.display.flip()
+        clock.tick(60)
         
 
 
