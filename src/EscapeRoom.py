@@ -1,6 +1,7 @@
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import Item
+from Room import FirstRoom
 import json
 
 import nltk
@@ -13,10 +14,11 @@ import sys
 voice_input = False
 test = False
 
-objects=[]
+# objects=[]
 # current_room_items = ["key", "door", "table"]
 # bag = []
 threshold = 0.2
+rooms=[]
 
 #Initialising the game screen
 pygame.init()
@@ -33,34 +35,29 @@ font = pygame.font.Font(pygame.font.get_default_font(), 50)
 medium_font = pygame.font.Font(pygame.font.get_default_font(), 30)
 small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
+# def initialiseRoom():
+#     door = Item("door", item_def="door.n.01",actions=["unlock", "open"], status=["locked", "unlocked"], action_def=["unlock.v.01",'open.v.01'], description="There is a lock on the door.")
+#     key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"], description="The key may be used to unlock something.")
+#     table = Item("table", item_def="table.n.02", description="There is a key on the table.")
+#     objects.extend([door, key, table])
+#     print("Room Created!")
 
-def initialiseRoom():
-    door = Item("door", item_def="door.n.01",actions=["unlock", "open"], status=["locked", "unlocked"], action_def=["unlock.v.01",'open.v.01'], description="There is a lock on the door.")
-    key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"], description="The key may be used to unlock something.")
-    table = Item("table", item_def="table.n.02", description="There is a key on the table.")
-    objects.extend([door, key, table])
-    print("Room Created!")
+def initialiseGame():
+    firstRoom = FirstRoom(1, [])
 
+    rooms.append(firstRoom)
 
-# Return the Item object with the
-def getItem(item_name):
-    for obj in objects:
-        if item_name == obj.getName():
-            return obj
-    return None
-
-
-def identifyObject(item):
+def identifyObject(room, item):
     max_similarity = 0
     matching_obj_index = -1
-    for i in range(len(objects)):
+    for i in range(len(room.items_in_room)):
         for ss in wn.synsets(item, pos=wn.NOUN):
             if(ss.name().split(".")[0] == item):
-                current_similarity = ss.lch_similarity(wn.synset(objects[i].getItemDef()))
+                current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
                 if current_similarity > max_similarity:
                     max_similarity = current_similarity
                     matching_obj_index = i
-    identified_obj = objects[matching_obj_index]
+    identified_obj = room.items_in_room[matching_obj_index]
     print("Input Item: {} ==> Identified Item: {}".format(item, identified_obj.getName()))
     return identified_obj
 
@@ -78,35 +75,34 @@ def identifyAction(action, item):
     print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
     return matching_action if max_similarity > threshold else ""
 
-def processAction(actions_dobjects):
+def processAction(room, actions_dobjects):
     msg = ""
     for (action, direct_object) in actions_dobjects:
-        item = identifyObject(direct_object)
+        item = identifyObject(room, direct_object)
         matching_action = identifyAction(action, item)
 
         if matching_action!="":
             if matching_action == "get":
-                bag.append(item.getName())
-                current_room_items.remove(item.getName())
+                room.bag.append(item.getName())
+                room.currentItems.remove(item.getName())
                 msg += "You have got {} in your bag.".format(item.getName())
             elif matching_action == "unlock":
+                print("Matched Action")
                 if item.getName() == "door":
-                    if objects[1].getName() in bag:
+                    if "key" in room.bag:
                         item.setCurrentStatus("unlocked")
                         msg+= "The door is unlocked."
                     else:
                         msg+= "The door is locked."
 
-                    
             elif matching_action == "investigate":
                 msg+= item.getDescription()
-
-        print(current_room_items, bag)
+        print(room.doorUnlocked())
         return msg
 
-# Check if the door is unlocked 
-def doorUnlockedByKey():
-    return objects[0].getCurrentStatus() == "unlocked" 
+# # Check if the door is unlocked 
+# def doorUnlockedByKey(room):
+#     return room.items_in_room[1].getCurrentStatus() == "unlocked" 
 
 def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     mouse = pygame.mouse.get_pos()
@@ -116,7 +112,7 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
         pygame.draw.rect(screen, hovercolour, (x,y,width, height))
         if click[0] == 1:
-            firstRoom([],["key","door","table"])
+            playLevel(rooms[0])
     else:
         pygame.draw.rect(screen, defaultcolour, (x,y,width,height))
 
@@ -162,8 +158,7 @@ def endingScreen():
         pygame.display.update()
 
 # Content of the first room
-def firstRoom(bag, current_room_items):
-    print("In first Room:", bag, current_room_items)
+def playLevel(room):
     # Title of the room
     title_text = font.render("Welcome to the first room", True, (255,255,255))
 
@@ -178,13 +173,13 @@ def firstRoom(bag, current_room_items):
     # Input and Response
     user_input = ""
     response = ""
-    success = False
     clock = pygame.time.Clock()
 
     # Initilise the room with objects
-    initialiseRoom()
+    room.initialiseRoom()
+    print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
 
-    while not success:
+    while not room.doorUnlocked():
         screen.fill((0,0,0))
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
         screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
@@ -207,10 +202,8 @@ def firstRoom(bag, current_room_items):
 
                     print(user_input)
                     actions_dobjects = vr.processSpeech(user_input)
-             # processAction(action, subject, direct_object, indirect_object)
-                    response = processAction(actions_dobjects)
+                    response = processAction(room,actions_dobjects)
 
-                    success = doorUnlockedByKey()
                     user_input = ""
 
                 else:
@@ -227,7 +220,9 @@ def firstRoom(bag, current_room_items):
         pygame.display.flip()
         clock.tick(60)
 
+
     #TODO
+        
 
     endingScreen()
         
@@ -239,6 +234,7 @@ def firstRoom(bag, current_room_items):
 
 if __name__ == "__main__":
     if not test:
+        initialiseGame()
         titleScreen()
 
     else:
