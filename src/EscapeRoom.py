@@ -14,8 +14,8 @@ voice_input = False
 test = False
 
 objects=[]
-current_room_items = ["key", "door", "table"]
-bag = []
+# current_room_items = ["key", "door", "table"]
+# bag = []
 threshold = 0.2
 
 #Initialising the game screen
@@ -35,10 +35,6 @@ small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
 
 def initialiseRoom():
-    f = open("room_details.json")
-    data = json.load(f)
-    f.close()
-
     door = Item("door", item_def="door.n.01",actions=["unlock", "open"], status=["locked", "unlocked"], action_def=["unlock.v.01",'open.v.01'], description="There is a lock on the door.")
     key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"], description="The key may be used to unlock something.")
     table = Item("table", item_def="table.n.02", description="There is a key on the table.")
@@ -58,14 +54,12 @@ def identifyObject(item):
     max_similarity = 0
     matching_obj_index = -1
     for i in range(len(objects)):
-        print(i, objects[i].getName())
         for ss in wn.synsets(item, pos=wn.NOUN):
             if(ss.name().split(".")[0] == item):
                 current_similarity = ss.lch_similarity(wn.synset(objects[i].getItemDef()))
                 if current_similarity > max_similarity:
                     max_similarity = current_similarity
                     matching_obj_index = i
-    print(matching_obj_index)
     identified_obj = objects[matching_obj_index]
     print("Input Item: {} ==> Identified Item: {}".format(item, identified_obj.getName()))
     return identified_obj
@@ -85,6 +79,7 @@ def identifyAction(action, item):
     return matching_action if max_similarity > threshold else ""
 
 def processAction(actions_dobjects):
+    msg = ""
     for (action, direct_object) in actions_dobjects:
         item = identifyObject(direct_object)
         matching_action = identifyAction(action, item)
@@ -93,16 +88,21 @@ def processAction(actions_dobjects):
             if matching_action == "get":
                 bag.append(item.getName())
                 current_room_items.remove(item.getName())
+                msg += "You have got {} in your bag.".format(item.getName())
             elif matching_action == "unlock":
                 if item.getName() == "door":
                     if objects[1].getName() in bag:
                         item.setCurrentStatus("unlocked")
+                        msg+= "The door is unlocked."
                     else:
-                        print("The door is locked")
+                        msg+= "The door is locked."
+
+                    
             elif matching_action == "investigate":
-                print(item.getDescription())
+                msg+= item.getDescription()
 
         print(current_room_items, bag)
+        return msg
 
 # Check if the door is unlocked 
 def doorUnlockedByKey():
@@ -116,7 +116,7 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
         pygame.draw.rect(screen, hovercolour, (x,y,width, height))
         if click[0] == 1:
-            firstRoom()
+            firstRoom([],["key","door","table"])
     else:
         pygame.draw.rect(screen, defaultcolour, (x,y,width,height))
 
@@ -141,8 +141,29 @@ def titleScreen():
         pygame.display.update()
 
 
+def endingScreen():
+    print("restarted")
+    bag = []
+    current_room_items = ["key", "door", "table"]
+    print(bag, current_room_items)
+    text = font.render("You escaped!", True, (255,255,255))
+
+    while True:
+        screen.fill((0,0,0))
+        screen.blit(text, ((screen_width - text.get_width()) /2, 50))
+
+        # start button
+        create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        pygame.display.update()
+
 # Content of the first room
-def firstRoom():
+def firstRoom(bag, current_room_items):
+    print("In first Room:", bag, current_room_items)
     # Title of the room
     title_text = font.render("Welcome to the first room", True, (255,255,255))
 
@@ -154,10 +175,13 @@ def firstRoom():
     rect_height = screen_height/4
     input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
     
+    # Input and Response
     user_input = ""
+    response = ""
     success = False
     clock = pygame.time.Clock()
 
+    # Initilise the room with objects
     initialiseRoom()
 
     while not success:
@@ -182,66 +206,41 @@ def firstRoom():
                 elif event.key == pygame.K_RETURN:
 
                     print(user_input)
-
                     actions_dobjects = vr.processSpeech(user_input)
-           
              # processAction(action, subject, direct_object, indirect_object)
-                    processAction(actions_dobjects)
+                    response = processAction(actions_dobjects)
 
                     success = doorUnlockedByKey()
-
-                    print("end of game")
                     user_input = ""
 
                 else:
                     user_input +=event.unicode
 
-    
-
-        
         pygame.draw.rect(screen, (255,255,0), input_rect)
         text_surface = medium_font.render(user_input, True, (255, 0, 255))
         screen.blit(text_surface,input_rect.topleft)
+
+        
+        response_text = medium_font.render(response, True, (255,0,0))
+        screen.blit(response_text, (100,200))
+
         pygame.display.flip()
         clock.tick(60)
+
+    #TODO
+
+    endingScreen()
         
+
+
 
 
 
 
 if __name__ == "__main__":
     if not test:
-        
-
-
         titleScreen()
-        initialiseRoom()
-        while not success:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit()
 
-
-            pygame.display.update()
-
-                # if event.type== pygame.KEYDOWN:
-
-            
-        #     if voice_input:
-        #         user_input = vr.recogniseSpeech()
-        #         print("Google Speech Recognition thinks you said \"" + user_input + "\"")
-        #     else :
-        #         user_input = input("Waiting for input... ")
-        #         print("Input is \"" + user_input + "\"")
-
-        #     actions_dobjects = vr.processSpeech(user_input)
-           
-        #     # processAction(action, subject, direct_object, indirect_object)
-        #     processAction(actions_dobjects)
-
-        #     success = doorUnlockedByKey()
-
-        # print("end of game")
     else:
         for ss in wn.synsets("unlock", pos= wn.VERB):
             print(ss,ss.definition())
