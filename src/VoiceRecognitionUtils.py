@@ -42,7 +42,7 @@ def identifyActionsAndObjects(speech):
     indirect_object = []
 
     for token in speech:
-        print(token, action, subject, direct_object, indirect_object)
+        # print(token, action, subject, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             action.append(token.text)
         elif(token.dep_ == 'dobj'):
@@ -70,7 +70,7 @@ def processSpeech(input):
     # print("--------------------------------------")
 
     (action, subject, direct_object, indirect_object) = identifyActionsAndObjects(speech)
-    print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object )     
+    # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object )     
     # sent_summary = zip(action, subject, direct_object, indirect_object)
 
     # return action, subject, direct_object, indirect_object

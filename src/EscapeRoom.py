@@ -12,7 +12,7 @@ import pygame
 import sys
 
 voice_input = False
-test = False
+test = True
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -97,8 +97,7 @@ def processAction(room, actions_dobjects):
 
             elif matching_action == "investigate":
                 msg+= item.getDescription()
-        print(room.doorUnlocked())
-        return msg
+    return msg
 
 # # Check if the door is unlocked 
 # def doorUnlockedByKey(room):
@@ -238,8 +237,12 @@ if __name__ == "__main__":
         titleScreen()
 
     else:
-        for ss in wn.synsets("unlock", pos= wn.VERB):
-            print(ss,ss.definition())
+        initialiseGame()
+        user_input = input("Input: ")
+        actions_dobjects = vr.processSpeech(user_input)
+        rooms[0].initialiseRoom()
+        response = processAction(rooms[0],actions_dobjects)
+        
 
         
 
