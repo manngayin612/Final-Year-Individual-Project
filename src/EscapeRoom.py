@@ -3,6 +3,7 @@ import VoiceRecognitionUtils as vr
 from Item import Item
 from Room import FirstRoom
 import json
+import time
 
 import nltk
 # nltk.download('wordnet', force=True)
@@ -48,45 +49,60 @@ def initialiseGame():
 
 
 def identifyObject(room, item):
-    max_similarity = 0
-    max_wup = 0
-    matching_obj_index = -1
-    for i in range(len(room.items_in_room)):
-        for ss in wn.synsets(item, pos=wn.NOUN):
-            if(ss.name().split(".")[0] == item):
-                # Check synonyms
-                current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
-                # Check hypernyms
-                wup = ss.wup_similarity(wn.synset(room.items_in_room[i].getItemDef()))
+    #Check cache first=
+    objectFromCache = searchCache(item)
+    if objectFromCache != "":
+        for i in room.items_in_room:
+            if i.getName() == objectFromCache:
+                return i
+    else:
+        max_similarity = 0
+        max_wup = 0
+        matching_obj_index = -1
+        for i in range(len(room.items_in_room)):
+            for ss in wn.synsets(item, pos=wn.NOUN):
+                if(ss.name().split(".")[0] == item):
+                    # Check synonyms
+                    current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
+                    # Check hypernyms
+                    wup = ss.wup_similarity(wn.synset(room.items_in_room[i].getItemDef()))
 
-                if current_similarity > max_similarity or wup > max_wup:
-                    max_similarity = current_similarity
-                    max_wup = wup
-                    matching_obj_index = i
-    
-    identified_obj = room.items_in_room[matching_obj_index]
-    print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
-    return identified_obj if (max_similarity > 3 or wup > 0.9 )else printError("{} is not found in the room.".format(item))
+                    if current_similarity > max_similarity or wup > max_wup:
+                        max_similarity = current_similarity
+                        max_wup = wup
+                        matching_obj_index = i
+        
+        identified_obj = room.items_in_room[matching_obj_index]
+        print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
+        writeToCache(identified_obj.getName(), item)
+        return identified_obj if (max_similarity > 3 or wup > 0.9 )else printError("{} is not found in the room.".format(item))
 
 
 def identifyAction(action, item):
-    max_similarity = 0
-    matching_action = ""
-    for (a,d) in item.getActions():
-        for ss in wn.synsets(action, pos=wn.VERB):
-            
-            # if(ss.name().split('.')[0] == action):
+    # Check in Cache
+    actionFromCache = searchCache(action)
+    if actionFromCache != "":
+        return actionFromCache
+    else:
+        max_similarity = 0
+        matching_action = ""
+        for (a,d) in item.getActions():
+            for ss in wn.synsets(action, pos=wn.VERB):
                 
-            current_similarity = ss.lch_similarity(wn.synset(d)) 
-            if current_similarity > max_similarity:
-                max_similarity = current_similarity
-                matching_action = a
-    print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
-    return matching_action if max_similarity > threshold else printError("I don't think you can do this.")
+                # if(ss.name().split('.')[0] == action):
+                    
+                current_similarity = ss.lch_similarity(wn.synset(d)) 
+                if current_similarity > max_similarity:
+                    max_similarity = current_similarity
+                    matching_action = a
+        print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
+        writeToCache(matching_action, action)
+        return matching_action if max_similarity > threshold else printError("I don't think you can do this.")
 
 def processAction(room, actions_dobjects):
     msg = ""
     for (action, direct_object) in actions_dobjects:
+        start = time.process_time()
         item = identifyObject(room, direct_object)
 
         if type(item) == str:
@@ -112,7 +128,26 @@ def processAction(room, actions_dobjects):
 
             elif matching_action == "investigate":
                 msg+= item.getDescription()
+        elapsed = time.process_time() - start
+        print(elapsed)
     return msg
+
+def searchCache(word):
+    with open("cache.json", "r") as jsonFile:
+        data = json.load(jsonFile)
+        if word in data:
+            return data[word]
+        else:
+            return ""
+
+def writeToCache(word, new_word):
+    with open("cache.json", "r") as jsonFile:
+        data = json.load(jsonFile)
+
+        data[new_word] = word
+    with open("cache.json", "w") as jsonFile:
+        json.dump(data,jsonFile)
+
 
 def printError(msg):
     print(msg)
@@ -262,7 +297,7 @@ if __name__ == "__main__":
         response = processAction(rooms[0],actions_dobjects)
         print(response)
         
-
+        
         
 
             

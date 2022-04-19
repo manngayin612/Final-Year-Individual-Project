@@ -94,3 +94,4 @@ def getSynsetsList(word):
     # TODO: Filter the ones with low similarity
     return set(lemmas_for_synsets+hypernyms)
 
+
