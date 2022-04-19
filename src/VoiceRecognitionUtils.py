@@ -48,13 +48,15 @@ def identifyActionsAndObjects(speech):
         elif(token.dep_ == 'dobj'):
             direct_object.append(token.text) 
         elif(token.dep_ == 'pobj'):
-            subject = token.text 
+            direct_object.append(token.text) 
         elif(token.dep_ == 'dative'):
             indirect_object = token.text
         elif(token.head.text == action[len(action)-1] and token.pos_ == "ADP" ):
             action[len(action)-1] += "_" + token.text
 
+
     # print("------------SUMMARY-------------")
+
     return action, subject, direct_object, indirect_object
 
 

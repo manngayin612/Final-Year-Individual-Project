@@ -44,22 +44,29 @@ small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
 def initialiseGame():
     firstRoom = FirstRoom(1, [])
-
     rooms.append(firstRoom)
+
 
 def identifyObject(room, item):
     max_similarity = 0
+    max_wup = 0
     matching_obj_index = -1
     for i in range(len(room.items_in_room)):
         for ss in wn.synsets(item, pos=wn.NOUN):
             if(ss.name().split(".")[0] == item):
+                # Check synonyms
                 current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
-                if current_similarity > max_similarity:
+                # Check hypernyms
+                wup = ss.wup_similarity(wn.synset(room.items_in_room[i].getItemDef()))
+
+                if current_similarity > max_similarity or wup > max_wup:
                     max_similarity = current_similarity
+                    max_wup = wup
                     matching_obj_index = i
+    
     identified_obj = room.items_in_room[matching_obj_index]
-    print("Input Item: {} ==> Identified Item: {}".format(item, identified_obj.getName()))
-    return identified_obj
+    print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
+    return identified_obj if (max_similarity > 3 or wup > 0.9 )else printError("{} is not found in the room.".format(item))
 
 
 def identifyAction(action, item):
@@ -67,19 +74,27 @@ def identifyAction(action, item):
     matching_action = ""
     for (a,d) in item.getActions():
         for ss in wn.synsets(action, pos=wn.VERB):
-            if(ss.name().split('.')[0] == action):
-                current_similarity = ss.lch_similarity(wn.synset(d)) 
-                if current_similarity > max_similarity:
-                    max_similarity = current_similarity
-                    matching_action = a
+            
+            # if(ss.name().split('.')[0] == action):
+                
+            current_similarity = ss.lch_similarity(wn.synset(d)) 
+            if current_similarity > max_similarity:
+                max_similarity = current_similarity
+                matching_action = a
     print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
-    return matching_action if max_similarity > threshold else ""
+    return matching_action if max_similarity > threshold else printError("I don't think you can do this.")
 
 def processAction(room, actions_dobjects):
     msg = ""
     for (action, direct_object) in actions_dobjects:
         item = identifyObject(room, direct_object)
-        matching_action = identifyAction(action, item)
+
+        if type(item) == str:
+            #TODO
+            print("Lets check the next one.")
+            continue
+        else:
+            matching_action = identifyAction(action, item)
 
         if matching_action!="":
             if matching_action == "get":
@@ -99,6 +114,9 @@ def processAction(room, actions_dobjects):
                 msg+= item.getDescription()
     return msg
 
+def printError(msg):
+    print(msg)
+    return msg
 # # Check if the door is unlocked 
 # def doorUnlockedByKey(room):
 #     return room.items_in_room[1].getCurrentStatus() == "unlocked" 
@@ -238,10 +256,11 @@ if __name__ == "__main__":
 
     else:
         initialiseGame()
+        rooms[0].initialiseRoom()
         user_input = input("Input: ")
         actions_dobjects = vr.processSpeech(user_input)
-        rooms[0].initialiseRoom()
         response = processAction(rooms[0],actions_dobjects)
+        print(response)
         
 
         
