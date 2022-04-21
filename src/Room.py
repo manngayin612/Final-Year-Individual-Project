@@ -22,7 +22,7 @@ class FirstRoom(Room):
     def initialiseRoom(self):
         self.bag = []
         self.currentItems = ["key","door","table"]
-        door = Item("door", item_def="door.n.01",actions=["unlock", "open"], status=["locked", "unlocked"], action_def=["unlock.v.01",'open.v.01'], description="There is a lock on the door.")
+        door = Item("door", item_def="door.n.01",actions=["unlock"], status=["locked", "unlocked"], action_def=["unlock.v.01"], description="There is a lock on the door.")
         key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"], description="The key may be used to unlock something.")
         table = Item("table", item_def="table.n.02", description="There is a key on the table.")
         self.items_in_room= [key, door, table]

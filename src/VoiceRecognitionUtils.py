@@ -64,6 +64,23 @@ def identifyActionsAndObjects(speech):
 
     return action, subject, direct_object, indirect_object
 
+def IdentifyNoun(input):
+    en_nlp = spacy.load('en_core_web_sm')
+    en_nlp.add_pipe("spacy_wordnet", after='tagger', config={'lang': en_nlp.lang})
+    speech =  en_nlp(input)
+
+    nouns = []
+    for token in speech:
+        if token.pos_ == 'NOUN':
+            nouns.append(token)
+            for ss in token._.wordnet.synsets():
+    
+                print("{}==>{}".format(ss.name(),ss.definition()))
+            
+    print(set(nouns))
+
+        
+
 
 
 def processSpeech(input):
@@ -84,19 +101,19 @@ def processSpeech(input):
     return zip(action, direct_object)
 
     
-def getSynsetsList(word):
-    nlp = spacy.load('en_core_web_sm')
-    nlp.add_pipe("spacy_wordnet", after='tagger', config={'lang': nlp.lang})
-    token = nlp(word)[0]
+# def getSynsetsList(word):
+#     nlp = spacy.load('en_core_web_sm')
+#     nlp.add_pipe("spacy_wordnet", after='tagger', config={'lang': nlp.lang})
+#     token = nlp(word)[0]
 
-    synsets = token._.wordnet.synsets()
-    # print(word)
-    # for ss in synsets:
-    #     for hyper in ss.hypernyms():
-    #         print(ss,hyper)
-    lemmas_for_synsets = [lemma for s in synsets for lemma in s.lemma_names()]
-    hypernyms = [hyper for s in synsets for hyper_synset in s.hypernyms() for hyper in hyper_synset.lemma_names()]
-    # TODO: Filter the ones with low similarity
-    return set(lemmas_for_synsets+hypernyms)
+#     synsets = token._.wordnet.synsets()
+#     # print(word)
+#     # for ss in synsets:
+#     #     for hyper in ss.hypernyms():
+#     #         print(ss,hyper)
+#     lemmas_for_synsets = [lemma for s in synsets for lemma in s.lemma_names()]
+#     hypernyms = [hyper for s in synsets for hyper_synset in s.hypernyms() for hyper in hyper_synset.lemma_names()]
+#     # TODO: Filter the ones with low similarity
+#     return set(lemmas_for_synsets+hypernyms)
 
 
