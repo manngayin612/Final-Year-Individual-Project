@@ -1,7 +1,7 @@
 from tokenize import Token
 import spacy
 import speech_recognition as sr
-from spacy import displacy
+# from spacy import displacy
 
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
 
@@ -42,6 +42,7 @@ def identifyActionsAndObjects(speech):
     indirect_object = []
 
     for token in speech:
+        print(token, token.pos_)
         # print(token, action, subject, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             action.append(token.text)
@@ -51,8 +52,12 @@ def identifyActionsAndObjects(speech):
             direct_object.append(token.text) 
         elif(token.dep_ == 'dative'):
             indirect_object = token.text
-        elif(token.head.text == action[len(action)-1] and token.pos_ == "ADP" ):
-            action[len(action)-1] += "_" + token.text
+        elif(token.pos_ == "ADP" ):
+            if (token.head.text == action[len(action)-1]):
+                action[len(action)-1] += "_" + token.text
+        else:
+            continue
+        
 
 
     # print("------------SUMMARY-------------")

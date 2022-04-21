@@ -1,7 +1,9 @@
+from random import randrange
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import Item
 from Room import FirstRoom
+import ChatGenerator 
 import json
 import time
 
@@ -75,7 +77,7 @@ def identifyObject(room, item):
         identified_obj = room.items_in_room[matching_obj_index]
         print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
         writeToCache(identified_obj.getName(), item)
-        return identified_obj if (max_similarity > 3 or wup > 0.9 )else printError("{} is not found in the room.".format(item))
+        return identified_obj if (max_similarity > 3 or wup > 0.9 )else generateResponse("{} is not found in the room.".format(item))
 
 
 def identifyAction(action, item):
@@ -97,7 +99,7 @@ def identifyAction(action, item):
                     matching_action = a
         print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
         writeToCache(matching_action, action)
-        return matching_action if max_similarity > threshold else printError("I don't think you can do this.")
+        return matching_action if max_similarity > threshold else generateResponse("I don't think you can do this.")
 
 def processAction(room, actions_dobjects):
     msg = ""
@@ -116,15 +118,15 @@ def processAction(room, actions_dobjects):
             if matching_action == "get":
                 room.bag.append(item.getName())
                 room.currentItems.remove(item.getName())
-                msg += "You have got {} in your bag.".format(item.getName())
+                msg += generateResponse("You have got {} in your bag.".format(item.getName()))
             elif matching_action == "unlock":
                 print("Matched Action")
                 if item.getName() == "door":
                     if "key" in room.bag:
                         item.setCurrentStatus("unlocked")
-                        msg+= "The door is unlocked."
+                        msg+= generateResponse("The door is unlocked.")
                     else:
-                        msg+= "The door is locked."
+                        msg+= generateResponse("The door is locked.")
 
             elif matching_action == "investigate":
                 msg+= item.getDescription()
@@ -148,13 +150,16 @@ def writeToCache(word, new_word):
     with open("cache.json", "w") as jsonFile:
         json.dump(data,jsonFile)
 
+def generateResponse(res):
+    num_beams = 30
+    num_return_sequences = 20
+    responses = ChatGenerator.get_response(res,num_return_sequences,num_beams)
+    index = randrange(len(responses))
+    print(res, "--", responses[index])
+    return responses[index]
 
-def printError(msg):
-    print(msg)
-    return msg
-# # Check if the door is unlocked 
-# def doorUnlockedByKey(room):
-#     return room.items_in_room[1].getCurrentStatus() == "unlocked" 
+
+
 
 def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     mouse = pygame.mouse.get_pos()
@@ -280,10 +285,6 @@ def playLevel(room):
         
 
 
-
-
-
-
 if __name__ == "__main__":
     if not test:
         initialiseGame()
@@ -295,9 +296,8 @@ if __name__ == "__main__":
         user_input = input("Input: ")
         actions_dobjects = vr.processSpeech(user_input)
         response = processAction(rooms[0],actions_dobjects)
-        print(response)
-        
-        
+        generateResponse(response)
+    
         
 
             
