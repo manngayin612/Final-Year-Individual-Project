@@ -2,6 +2,8 @@ from tokenize import Token
 import spacy
 import speech_recognition as sr
 from Input import Input
+import ChatGenerator 
+from random import randrange
 
 # from spacy import displacy
 
@@ -56,17 +58,6 @@ def identifyActionsAndObjects(speech):
                 direct_object = token.text
             elif(token.dep_ == "pobj"):
                 indirect_object = token.text
-        # elif(token.dep_ == 'dobj'):
-            # direct_object.append(token.text)
-            # direct_object = token.text 
-        # elif(token.dep_ == 'pobj'):
-            # direct_object = token.text 
-        # elif(token.dep_ == 'dative'):
-            # indirect_object = token.text
-        # elif(token.pos_ == "ADP" ):
-            # if (token.head.text == action):
-                # action+= "_" + token.text
-            # print(token.head.text)
         elif(token.pos_ == "NUM"):
             password = token.text 
         elif(token.pos_ == "CCONJ"):
@@ -146,3 +137,10 @@ def processSpeech(input):
 #     return set(lemmas_for_synsets+hypernyms)
 
 
+def generateResponse(res):
+    num_beams = 30
+    num_return_sequences = 20
+    responses = ChatGenerator.get_response(res,num_return_sequences,num_beams)
+    index = randrange(len(responses))
+    print(res, "--", responses[index])
+    return responses[index]

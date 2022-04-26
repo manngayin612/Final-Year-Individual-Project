@@ -1,4 +1,4 @@
-from Item import Item, NumberLock
+from Item import Item, NumberLock, UnlockItem
 from SolvingPath import SolvingPath
 
 class Room:
@@ -23,11 +23,12 @@ class FirstRoom(Room):
     def initialiseRoom(self):
         self.bag = []
         self.currentItems = ["key","door","table"]
-        door = Item("door", item_def="door.n.01",actions=["unlock"], status=["locked", "unlocked"], action_def=["unlock.v.01"], description="There is a lock on the door.")
-        key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"], description="The key may be used to unlock something.")
-        table = Item("table", item_def="table.n.02", description="There is a key on the table.")
+        door = UnlockItem("door", item_def="door.n.01",actions=["unlock"], status=["locked", "unlocked"], action_def=["unlock.v.01"], required_items= "key",description="The door is locked now.", unlock_msg="You successfully escaped!")
+        key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"])
+        box = UnlockItem("box", item_def="box.n.01", actions=["open"], action_def=["open.v.01"], status=["opened", "closed"], description="You can't open the box. There is a lock on it.", unlock_msg="There is a key inside.")
+        table = Item("table", item_def="table.n.02", description="There is a box on the table.")
         padlock = NumberLock("padlock", password="1234",item_def="padlock.n.01", description="It is a four digit lock." )
-        self.items_in_room= [key, door, table, padlock]
+        self.items_in_room= [key, door, box, table, padlock]
         print("First Room Created!")
         return self.createSolutionPath()
 
