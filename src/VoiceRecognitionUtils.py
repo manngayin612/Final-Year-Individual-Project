@@ -1,6 +1,8 @@
 from tokenize import Token
 import spacy
 import speech_recognition as sr
+from Input import Input
+
 # from spacy import displacy
 
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
@@ -36,33 +38,50 @@ def identifyActionsAndObjects(speech):
     # for token in speech:
     #     print(token.text, token.pos_, token.dep_, token.head.text)
     
-    action = []
-    subject = []
-    direct_object = []
-    indirect_object = []
+    action = ""
+    subject = ""
+    direct_object = ""
+    indirect_object = ""
+    password = ""
 
+    inputs = []
     for token in speech:
-        print(token, token.pos_)
-        # print(token, action, subject, direct_object, indirect_object)
+        # print(token.dep_, token.pos_,token.head.text)
+
         if(token.pos_ == 'VERB'):
-            action.append(token.text)
-        elif(token.dep_ == 'dobj'):
-            direct_object.append(token.text) 
-        elif(token.dep_ == 'pobj'):
-            direct_object.append(token.text) 
-        elif(token.dep_ == 'dative'):
-            indirect_object = token.text
-        elif(token.pos_ == "ADP" ):
-            if (token.head.text == action[len(action)-1]):
-                action[len(action)-1] += "_" + token.text
+            # action.append(token.text)
+            action = token.text
+        elif(token.pos_ == 'NOUN'):
+            if(token.dep_ == 'dobj'):
+                direct_object = token.text
+            elif(token.dep_ == "pobj"):
+                indirect_object = token.text
+        # elif(token.dep_ == 'dobj'):
+            # direct_object.append(token.text)
+            # direct_object = token.text 
+        # elif(token.dep_ == 'pobj'):
+            # direct_object = token.text 
+        # elif(token.dep_ == 'dative'):
+            # indirect_object = token.text
+        # elif(token.pos_ == "ADP" ):
+            # if (token.head.text == action):
+                # action+= "_" + token.text
+            # print(token.head.text)
+        elif(token.pos_ == "NUM"):
+            password = token.text 
+        elif(token.pos_ == "CCONJ"):
+            inputs.append(Input(action, direct_object, tool=indirect_object,password=password))
+            action = ""
+            subject = ""
+            direct_object = ""
+            indirect_object = ""
+            password = ""
         else:
             continue
-        
+    inputs.append(Input(action, direct_object, tool=indirect_object, password=password))
+    
 
-
-    # print("------------SUMMARY-------------")
-
-    return action, subject, direct_object, indirect_object
+    return inputs
 
 def IdentifyNoun(input):
     en_nlp = spacy.load('en_core_web_sm')
@@ -71,11 +90,19 @@ def IdentifyNoun(input):
 
     nouns = []
     for token in speech:
+        
         if token.pos_ == 'NOUN':
             nouns.append(token)
+            print("-"*10)
+            print(token)
             for ss in token._.wordnet.synsets():
-    
-                print("{}==>{}".format(ss.name(),ss.definition()))
+                if(ss.name().split(".")[1] == "n"):
+                    print("{}".format(ss.definition()))
+
+            #TODO: Maybe can filter the definition for the appropriate domains
+            # synsets = token._.wordnet.wordnet_synsets_for_domain(["furniture"])
+            # for ss in synsets:
+            #     print(ss.name(), ss.definition())
             
     print(set(nouns))
 
@@ -84,21 +111,23 @@ def IdentifyNoun(input):
 
 
 def processSpeech(input):
+
+    f = open("user_input_log.txt", "a")
+    f.write(input)
+    f.close()
     en_nlp = spacy.load('en_core_web_sm')
     speech =  en_nlp(input)
 
-    # for label in en_nlp.get_pipe("parser").labels:
-    #     print(label, " -- ", spacy.explain(label))
-        
 
     # print("--------------------------------------")
 
-    (action, subject, direct_object, indirect_object) = identifyActionsAndObjects(speech)
-    # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object )     
-    # sent_summary = zip(action, subject, direct_object, indirect_object)
+    inputs = identifyActionsAndObjects(speech)
+    # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
 
-    # return action, subject, direct_object, indirect_object
-    return zip(action, direct_object)
+    # zipped = zip(action, direct_object, password)
+ 
+
+    return inputs
 
     
 # def getSynsetsList(word):

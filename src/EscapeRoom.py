@@ -1,8 +1,9 @@
 from random import randrange
 from py import process
 import VoiceRecognitionUtils as vr 
-from Item import Item
+from Item import Item, NumberLock, UnlockItem
 from Room import FirstRoom
+from Input import Input
 import ChatGenerator 
 import json
 import time
@@ -15,7 +16,7 @@ import pygame
 import sys
 
 voice_input = False
-test = False
+test = True
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -37,13 +38,6 @@ pygame.display.set_caption("Escape Room")
 font = pygame.font.Font(pygame.font.get_default_font(), 50)
 medium_font = pygame.font.Font(pygame.font.get_default_font(), 30)
 small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
-
-# def initialiseRoom():
-#     door = Item("door", item_def="door.n.01",actions=["unlock", "open"], status=["locked", "unlocked"], action_def=["unlock.v.01",'open.v.01'], description="There is a lock on the door.")
-#     key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"], description="The key may be used to unlock something.")
-#     table = Item("table", item_def="table.n.02", description="There is a key on the table.")
-#     objects.extend([door, key, table])
-#     print("Room Created!")
 
 def initialiseGame():
     firstRoom = FirstRoom(1, [])
@@ -77,7 +71,7 @@ def identifyObject(room, item):
         identified_obj = room.items_in_room[matching_obj_index]
         print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
         writeToCache(identified_obj.getName(), item)
-        return identified_obj if (max_similarity > 3 or wup > 0.9 )else generateResponse("{} is not found in the room.".format(item))
+        return identified_obj if (max_similarity > 3 or max_wup > 0.9 )else generateResponse("{} is not found in the room.".format(item))
 
 
 def identifyAction(action, item):
@@ -89,6 +83,7 @@ def identifyAction(action, item):
         max_similarity = 0
         matching_action = ""
         for (a,d) in item.getActions():
+            print(a,d, action)
             for ss in wn.synsets(action, pos=wn.VERB):
                 
                 # if(ss.name().split('.')[0] == action):
@@ -101,37 +96,41 @@ def identifyAction(action, item):
         writeToCache(matching_action, action)
         return matching_action if max_similarity > threshold else generateResponse("I don't think you can do this.")
 
-def processAction(room, actions_dobjects):
+def processAction(room, processed_input):
     msg = ""
-    for (action, direct_object) in actions_dobjects:
-        start = time.process_time()
-        item = identifyObject(room, direct_object)
+    # for (action, direct_object, pw) in actions_dobjects_pw:
+    start = time.process_time()
+    item = identifyObject(room, processed_input.item)
 
-        if type(item) == str:
-            #TODO
-            print("Lets check the next one.")
-            continue
-        else:
-            matching_action = identifyAction(action, item)
+    if type(item) == str:
+        #TODO
+        print("Lets check the next one.")
+    else:
+        matching_action = identifyAction(processed_input.action, item)
 
-        if matching_action!="":
-            if matching_action == "get":
-                room.bag.append(item.getName())
-                room.currentItems.remove(item.getName())
-                msg += generateResponse("You have got {} in your bag.".format(item.getName()))
-            elif matching_action == "unlock":
-                print("Matched Action")
-                if item.getName() == "door":
-                    if "key" in room.bag:
-                        item.setCurrentStatus("unlocked")
-                        msg+= generateResponse("The door is unlocked.")
-                    else:
-                        msg+= generateResponse("The door is locked.")
+    if matching_action!="":
+        if matching_action == "get":
+            room.bag.append(item.getName())
+            room.currentItems.remove(item.getName())
+            msg += generateResponse("You have got {} in your bag.".format(item.getName()))
+        elif matching_action == "unlock":
+            print("Matched Action")
+            if item.getName() == "door":
+                if "key" in room.bag:
+                    item.setCurrentStatus("unlocked")
+                    msg+= generateResponse("The door is unlocked.")
+                else:
+                    msg+= generateResponse("The door is locked.")
+            elif isinstance(item, NumberLock):
+                correctPassword = item.checkPassword(processed_input.password)
+                if correctPassword:
+                    item.setCurrentStatus("unlocked")
+                    msg += generateResponse("Your have the correct password for the {}".format(item.getName()))
 
-            elif matching_action == "investigate":
-                msg+= item.getDescription()
-        elapsed = time.process_time() - start
-        print(elapsed)
+
+        elif matching_action == "investigate":
+            msg+= item.getDescription()
+    elapsed = time.process_time() - start
     return msg
 
 def searchCache(word):
@@ -258,8 +257,9 @@ def playLevel(room):
                 elif event.key == pygame.K_RETURN:
 
                     print(user_input)
-                    actions_dobjects = vr.processSpeech(user_input)
-                    response = processAction(room,actions_dobjects)
+                    processed_inputs = vr.processSpeech(user_input)
+                    for input in processed_inputs:
+                        response += processAction(room,input)
 
                     user_input = ""
 
@@ -295,8 +295,10 @@ if __name__ == "__main__":
         rooms[0].initialiseRoom()
         user_input = input("Input: ")
         actions_dobjects = vr.processSpeech(user_input)
-        response = processAction(rooms[0],actions_dobjects)
-        generateResponse(response)
+        response = ""
+        for i in actions_dobjects:
+            response += processAction(rooms[0],i)
+       # generateResponse(response)
     
         
 
