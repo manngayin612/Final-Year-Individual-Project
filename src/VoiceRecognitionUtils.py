@@ -38,7 +38,6 @@ def recogniseSpeech():
 def identifyActionsAndObjects(speech):
     # print("DETAILS OF SPEECH")
     # for token in speech:
-    #     print(token.text, token.pos_, token.dep_, token.head.text)
     
     action = ""
     subject = ""
@@ -47,9 +46,10 @@ def identifyActionsAndObjects(speech):
     password = ""
 
     inputs = []
+    temp = ()
     for token in speech:
-        # print(token.dep_, token.pos_,token.head.text)
-
+        print(token.text, token.pos_, token.dep_, token.head.text)
+        print(action, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             # action.append(token.text)
             action = token.text
@@ -57,7 +57,13 @@ def identifyActionsAndObjects(speech):
             if(token.dep_ == 'dobj'):
                 direct_object = token.text
             elif(token.dep_ == "pobj"):
-                indirect_object = token.text
+                if token.head.text == "of":
+                    if temp[1] == "pobj":
+                        indirect_object = token.text + "_" +  temp[0]
+                    else :
+                        direct_object = token.text + "_" + temp[0]
+                else:
+                    indirect_object = token.text
         elif(token.pos_ == "NUM"):
             password = token.text 
         elif(token.pos_ == "CCONJ"):
@@ -67,8 +73,14 @@ def identifyActionsAndObjects(speech):
             direct_object = ""
             indirect_object = ""
             password = ""
+        elif(token.pos_ == "ADP"):
+            if token.text == "of":
+                temp = (token.head.text, token.head.dep_)
+            print(temp)
         else:
             continue
+    print(action, direct_object, indirect_object)
+        
     inputs.append(Input(action, direct_object, tool=indirect_object, password=password))
     
 
@@ -113,6 +125,7 @@ def processSpeech(input):
     # print("--------------------------------------")
 
     inputs = identifyActionsAndObjects(speech)
+    print("Input result from identifyActionsAndObjects: ", len(inputs))
     # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
 
     # zipped = zip(action, direct_object, password)
