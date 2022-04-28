@@ -119,18 +119,28 @@ class CombinableItem(Item):
         self.combine_with = combine_with
 
     def combineWith(self, room, component):
-        if component == self.combine_with:
-            room.bag.append(self.finished_item.name)
-            room.currentItems.remove(self.name)
-            room.currentItems.remove(component)
+        if component.getName() == self.combine_with:
+            room.bag.append(self.finished_item.getName())
+
+            if self.getName() in room.bag: room.bag.remove(self.getName()) 
+            else: room.currentItems.remove(self.getName())
+
+            if component.getName() in room.bag: room.bag.remove(component.getName()) 
+            else: room.currentItems.remove(component.getName())
+            
+            
             room.items_in_room.append(self.finished_item)
-            return vr.generateResponse("You have successfully combined {} and {}. You got a new {}".format(self.getName(), component, self.finished_item.name))
+            room.items_in_room.remove(self)
+            room.items_in_room.remove(component)
+            print("Bag: {}, CurrentItems: {}")
+            return vr.generateResponse("You have successfully combined {} and {}. You got a new {}".format(self.getName(), component, self.finished_item.getName()))
         else:
             return vr.generateResponse("You cannot combine {} with {}.".format(self.getName(), component))
             
 
 
     def performAction(self, room, input):
+        print(input.tool)
         msg = ""
         if input.action == "investigate":
             msg += self.getDescription()
@@ -143,7 +153,7 @@ class CombinableItem(Item):
                 msg+= vr.generateResponse("What do you want to combine with {}".format(self.getName()))
             else:
                 if self.isBagObject(room, input.tool) or self.isBagObject(room, self.getName()):
-                    msg+=self.combineWith(room, room.getItem(input.tool))
+                    msg+=self.combineWith(room, input.tool)
                 else:
                     msg+=vr.generateResponse("You have some missing pieces.")
         else:

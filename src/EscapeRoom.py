@@ -15,7 +15,7 @@ import pygame
 import sys
 
 voice_input = False
-test = True
+test = False
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
