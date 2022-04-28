@@ -143,7 +143,7 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
         pygame.draw.rect(screen, hovercolour, (x,y,width, height))
         if click[0] == 1:
-            playLevel(rooms[1])
+            playLevel(rooms[0])
     else:
         pygame.draw.rect(screen, defaultcolour, (x,y,width,height))
 
