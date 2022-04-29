@@ -49,6 +49,7 @@ def identifyObject(room, item):
     #Check cache first=
     objectFromCache = searchCache(item)
     if objectFromCache != "":
+        print("Got from Cache")
         for i in room.items_in_room:
             if i.getName() == objectFromCache:
                 return i
@@ -57,6 +58,7 @@ def identifyObject(room, item):
         max_wup = 0
         matching_obj_index = -1
         for i in range(len(room.items_in_room)):
+            print("Checking number of item in room",len(room.items_in_room))
             for ss in wn.synsets(item, pos=wn.NOUN):
                 if(ss.name().split(".")[0] == item):
                     # Check synonyms
@@ -82,11 +84,13 @@ def identifyAction(action, item):
     actionFromCache = searchCache(action)
     print(actionFromCache)
     if actionFromCache != "":
+        print("Found action from cache")
         return actionFromCache
     else:
         max_similarity = 0
         matching_action = ""
         for (a,d) in item.getActions():
+
             for ss in wn.synsets(action, pos=wn.VERB):
                 
                 # if(ss.name().split('.')[0] == action):
@@ -144,12 +148,13 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
         pygame.draw.rect(screen, hovercolour, (x,y,width, height))
         if click[0] == 1:
-            playLevel(rooms[0])
+            return True
     else:
         pygame.draw.rect(screen, defaultcolour, (x,y,width,height))
 
     buttontext = font.render(text, True, (0,0,255))
     screen.blit(buttontext, ((screen_width-buttontext.get_width())/2, (screen_height-buttontext.get_height())/2))
+    
 
 
 def titleScreen():
@@ -160,7 +165,10 @@ def titleScreen():
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+
+        if start:
+            playLevel(rooms[0])
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -169,11 +177,11 @@ def titleScreen():
         pygame.display.update()
 
 
-def endingScreen():
+def endingScreen(room):
     print("restarted")
-    bag = []
-    current_room_items = ["key", "door", "table"]
-    print(bag, current_room_items)
+    # bag = []
+    # current_room_items = room.starting_items
+    # print(bag, current_room_items)
     text = font.render("You escaped!", True, (255,255,255))
 
     while True:
@@ -181,7 +189,13 @@ def endingScreen():
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        try_again_button = create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        next_level_button = create_button("Next Level", ((screen_width-125)/2), (screen_height+35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        
+        if try_again_button:
+            playLevel(rooms[room.level-1])
+        elif next_level_button:
+            playLevel(rooms[room.level])
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -253,9 +267,10 @@ def playLevel(room):
         pygame.display.flip()
         clock.tick(60)
     #TODO
+    print("Finished Room")
         
 
-    endingScreen()
+    endingScreen(room)
         
 
 

@@ -49,7 +49,7 @@ def identifyActionsAndObjects(speech):
     inputs = []
     temp = ()
     for token in speech:
-        # print(token.text, token.pos_, token.dep_, token.head.text)
+        print(token.text, token.pos_, token.dep_, token.head.text)
         # print(action, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             # action.append(token.text)
@@ -63,6 +63,8 @@ def identifyActionsAndObjects(speech):
                         indirect_object = token.text + "_" +  temp[0]
                     else :
                         direct_object = token.text + "_" + temp[0]
+                elif token.head.pos_ == "ADP":
+                    direct_object = token.text
                 else:
                     indirect_object = token.text
         elif(token.pos_ == "NUM"):
@@ -77,10 +79,10 @@ def identifyActionsAndObjects(speech):
         elif(token.pos_ == "ADP"):
             if token.text == "of":
                 temp = (token.head.text, token.head.dep_)
-            print(temp)
         else:
             continue
-    print(action, direct_object, indirect_object)
+    print("action: ", action,"direct object: ", direct_object, "tool: ",indirect_object)
+    
         
     inputs.append(Input(action, direct_object, tool=indirect_object, password=password))
     
@@ -133,12 +135,6 @@ def coreferenceResolution(input):
 
 
     return current_input
-    
-
-
-
-
-
 
 
 
@@ -149,14 +145,8 @@ def processSpeech(input):
     f.close()
 
     current_input = coreferenceResolution(input)
-    print(current_input)
+    print("Result from crefernceREsolution",current_input)
 
-
-   
-
-
-
-    # print("--------------------------------------")
 
     inputs = identifyActionsAndObjects(current_input)
     print("Input result from identifyActionsAndObjects: ", inputs)

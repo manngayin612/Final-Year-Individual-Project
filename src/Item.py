@@ -1,3 +1,4 @@
+from os import unlink
 from telnetlib import STATUS
 import VoiceRecognitionUtils as vr
 
@@ -33,14 +34,14 @@ class Item:
             if input.action == "get":
                 room.bag.append(self.getName())
                 room.currentItems.remove(self.getName())
-                msg += vr.generateResponse("You have got {} in your bag.".format(self.getName()))
+                msg += "You have got {} in your bag.".format(self.getName())
 
             elif input.action == "investigate":
                 msg+= self.getDescription()
             else:
-                msg+= vr.generateResponse("What do you want to do?")
+                msg+= "What do you want to do?"
 
-        return msg
+        return vr.generateResponse(msg)
 
     def isRoomObject(self, room, input):
         return input in room.currentItems
@@ -52,7 +53,7 @@ class Item:
 
 # Items that need certain items to unlock
 class UnlockItem(Item):
-    def __init__(self, name,  unlock_msg, item_def,required_items="", actions=["unlock"], action_def=["unlock.v.03"],success = False, description="Exit Item"):
+    def __init__(self, name,  unlock_msg, item_def, required_items="", actions=["unlock"], action_def=["unlock.v.03"],success = False, description="Exit Item"):
         super().__init__(name, item_def, actions, action_def, success, description=description)
         self.required_items = required_items
         self.unlock_message = unlock_msg
@@ -67,26 +68,26 @@ class UnlockItem(Item):
 
         elif input.action == "unlock":
             if self.checkRequired(room.bag):
-                msg += vr.generateResponse(self.unlock_message)
+                msg += self.unlock_message
+                self.success = True
             else: 
-                msg += vr.generateResponse("You might missed something like a {}".format(self.required_items))
+                msg += "You might missed something like a {}".format(self.required_items)
         else:
-            msg += vr.generateResponse("What do you want to do?")
+            msg += "What do you want to do?"
         
-        return msg
+        return vr.generateResponse(msg)
 
 # Items that need password to unlock
-class NumberLock(Item):
-    def __init__ (self, name, password, item_def, actions=["unlock"], action_def=["unlock.v.01"],success=False, description="blablabla"):
-        super().__init__(name, item_def, actions, action_def,success, description=description)
+class NumberLock(UnlockItem):
+    def __init__ (self, name, password, item_def, actions=["unlock"], action_def=["unlock.v.03"],success=False, description="blablabla", unlock_msg="You have got the correct password"):
+        super().__init__(name, unlock_msg, item_def, actions=actions, action_def = action_def,success =success, description=description,)
         self.password = password
+
     
     def unlockNumberLock(self, input):
         if input == self.password:
             self.success = True
-            return True
-        else:
-            return False
+        return self.success
 
     def performAction(self, room, input):
         msg = ""
@@ -94,16 +95,16 @@ class NumberLock(Item):
             msg += self.getDescription()
         elif input.action == "unlock":
             if input.password == "":
-                msg+= vr.generateResponse("Do you know the password for the {}?".format(self.getName()))
+                msg+= "Do you know the password for the {}?".format(self.getName())
             else:  
                 if self.unlockNumberLock(input.password):
-                    msg += vr.generateResponse("Your had the correct password for the {}".format(self.getName()))
+                    msg += "You had the correct password for the {}".format(self.getName())
                 else: 
-                    msg += vr.generateResponse("I don't think it is correct.")
+                    msg += "I don't think it is correct."
         else:
-            msg += vr.generateResponse("What do you want to do?")
+            msg += "What do you want to do?"
         
-        return msg
+        return vr.generateResponse(msg)
 
 class CombinableItem(Item):
     def __init__(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], action_def=["get.v.01", "combine.v.04"], success=False, description=""):
@@ -140,18 +141,18 @@ class CombinableItem(Item):
         elif input.action == "get":
             room.bag.append(self.getName())
             room.currentItems.remove(self.getName())
-            msg += vr.generateResponse("You have got {} in your bag.".format(self.getName()))
+            msg += "You have got {} in your bag.".format(self.getName())
         elif input.action == "combine":
             if input.tool == "" :
-                msg+= vr.generateResponse("What do you want to combine with {}".format(self.getName()))
+                msg+="What do you want to combine with {}".format(self.getName())
             else:
                 if self.isBagObject(room, input.tool) or self.isBagObject(room, self.getName()):
                     msg+=self.combineWith(room, input.tool)
                 else:
-                    msg+=vr.generateResponse("You have some missing pieces.")
+                    msg+="You have some missing pieces."
         else:
-            msg += vr.generateResponse("What do you want to do?")
-        return msg
+            msg += "What do you want to do?"
+        return vr.generateResponse(msg)
 
         
 
