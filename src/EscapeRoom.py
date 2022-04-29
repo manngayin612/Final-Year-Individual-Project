@@ -39,6 +39,7 @@ medium_font = pygame.font.Font(pygame.font.get_default_font(), 30)
 small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
 def initialiseGame():
+    open('user_input_log.txt', 'w').close()
     firstRoom = FirstRoom(1, [])
     secondRoom = SecondRoom(2, firstRoom.bag)
     rooms.extend([firstRoom, secondRoom])
@@ -79,6 +80,7 @@ def identifyObject(room, item):
 def identifyAction(action, item):
     # Check in Cache
     actionFromCache = searchCache(action)
+    print(actionFromCache)
     if actionFromCache != "":
         return actionFromCache
     else:
@@ -103,11 +105,10 @@ def processAction(room, processed_input):
     # for (action, direct_object, pw) in actions_dobjects_pw:
     start = time.process_time()
     processed_input.item = identifyObject(room, processed_input.item)
-    print("Processed_input item in processAction()", processed_input.item.getName())
+    print("Processed_input item in processAction()", processed_input.item.getActions())
     if processed_input.tool != "":
         processed_input.tool = identifyObject(room, processed_input.tool)
         print("Processed_input tools ", processed_input.tool.getName())
-    
 
     if type(processed_input.item) == str:
         #TODO
@@ -266,14 +267,14 @@ if __name__ == "__main__":
     else:
         # Check processSpeech and processAction functions
         initialiseGame()
-        rooms[1].initialiseRoom()
-        print(rooms[1].items_in_room)
+        rooms[0].initialiseRoom()
+        print(rooms[0].items_in_room)
         # user_input = input("Input: ")
-        user_input = "combine the handle with the head of ax"
+        user_input = "investigate the padlock and unlock it with 1234"
         actions_dobjects = vr.processSpeech(user_input)
         response = ""
         for i in actions_dobjects:
-            response += processAction(rooms[1],i)
+            response += processAction(rooms[0],i)
 
 
        # Check item.def

@@ -41,9 +41,9 @@ class FirstRoom(Room):
     def initialiseRoom(self):
         self.bag = []
         self.currentItems = ["key","door","table", "box", "padlock"]
-        door = UnlockItem("door", item_def="door.n.01",actions=["unlock"], success=False, action_def=["unlock.v.01"], required_items= "key",description="The door is locked now.", unlock_msg="You successfully escaped!")
+        door = UnlockItem("door", item_def="door.n.01", success=False, required_items= "key",description="The door is locked now.", unlock_msg="You successfully escaped!")
         key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"])
-        box = UnlockItem("box", item_def="box.n.01", actions=["open"], action_def=["open.v.01"], success=False, description="You can't open the box. There is a lock on it.", unlock_msg="There is a key inside.")
+        box = UnlockItem("box", item_def="box.n.01", success=False, description="You can't open the box. There is a lock on it.", unlock_msg="There is a key inside.")
         table = Item("table", item_def="table.n.02",  description="There is a box on the table.")
         padlock = NumberLock("padlock", password="1234",item_def="padlock.n.01", description="It is a four digit lock." )
         self.items_in_room= [key, door, box, table, padlock]

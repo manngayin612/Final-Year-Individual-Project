@@ -1,5 +1,6 @@
 from tokenize import Token
 import spacy
+import neuralcoref
 import speech_recognition as sr
 from Input import Input
 import ChatGenerator 
@@ -48,8 +49,8 @@ def identifyActionsAndObjects(speech):
     inputs = []
     temp = ()
     for token in speech:
-        print(token.text, token.pos_, token.dep_, token.head.text)
-        print(action, direct_object, indirect_object)
+        # print(token.text, token.pos_, token.dep_, token.head.text)
+        # print(action, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             # action.append(token.text)
             action = token.text
@@ -87,7 +88,7 @@ def identifyActionsAndObjects(speech):
     return inputs
 
 def IdentifyNoun(input):
-    en_nlp = spacy.load('en_core_web_sm')
+    en_nlp = spacy.load('en')
     en_nlp.add_pipe("spacy_wordnet", after='tagger', config={'lang': en_nlp.lang})
     speech =  en_nlp(input)
 
@@ -109,23 +110,56 @@ def IdentifyNoun(input):
             
     print(set(nouns))
 
+def coreferenceResolution(input):
         
+    en_nlp = spacy.load('en')
+    # print(en_nlp.pipe_names)
+    coref = neuralcoref.NeuralCoref(en_nlp.vocab, max_dist=1)
+    en_nlp.add_pipe(coref, name='neuralcoref')
+
+    with open("user_input_log.txt", "r") as f:
+        doc = en_nlp(f.read())
+
+
+
+    current_input  = en_nlp(input)
+    resolved = doc._.coref_resolved
+
+    # with open("user_input_log.txt", "w") as f:
+    #     f.write(resolved)
+    
+    current_input = en_nlp(resolved.split("\n")[-2])
+    print(resolved.split("\n"))
+
+
+    return current_input
+    
+
+
+
+
+
 
 
 
 def processSpeech(input):
-
+    # Save current input to the log
     f = open("user_input_log.txt", "a")
-    f.write(input)
+    f.write(input+".\n")
     f.close()
-    en_nlp = spacy.load('en_core_web_sm')
-    speech =  en_nlp(input)
+
+    current_input = coreferenceResolution(input)
+    print(current_input)
+
+
+   
+
 
 
     # print("--------------------------------------")
 
-    inputs = identifyActionsAndObjects(speech)
-    print("Input result from identifyActionsAndObjects: ", len(inputs))
+    inputs = identifyActionsAndObjects(current_input)
+    print("Input result from identifyActionsAndObjects: ", inputs)
     # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
 
     # zipped = zip(action, direct_object, password)
