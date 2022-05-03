@@ -1,1 +1,1 @@
-{"get": "pick_up", "key": "key", "door": "door", "furniture": "table", "table": "table", "check": "investigate", "pick_up": "get", "bag": "key", "take": "get", "unlock": "unlock", "open": "unlock"}
+{"get": "get", "table": "table", "investigate": "investigate", "look": "investigate", "box": "box", "unlock": "unlock", "key": "key", "take": "get", "door": "door", "open": "unlock", "check": "investigate", "pick": "get", "ax_head": "ax_head", "handle": "handle", "combine": "combine", "window": "window", "smash": "break"}

@@ -42,9 +42,9 @@ class FirstRoom(Room):
     def initialiseRoom(self):
         self.bag = []
         self.currentItems = ["key","door","table", "box"]
-        door = UnlockItem("door", item_def="door.n.01", success=False, required_items= "key",description="The door is locked now.", unlock_msg="You successfully escaped!")
+        door = UnlockItem("door", item_def="door.n.01", required_items= "key",description="The door is locked now.", unlock_msg="You successfully escaped!")
         key = Item("key", item_def="key.n.01",action_def=["get.v.01"], actions=["get"])
-        box = NumberLock("box", item_def="box.n.01", success=False, description="You can't open the box. There is a lock on it.", unlock_msg="There is a key inside.", password = "1234")
+        box = NumberLock("box", item_def="box.n.01", description="You can't open the box. There is a lock on it.", unlock_msg="There is a key inside.", password = "1234")
         table = Item("table", item_def="table.n.02",  description="There is a box on the table.")
         # padlock = NumberLock("padlock", password="1234",item_def="padlock.n.01", description="It is a four digit lock." )
         self.items_in_room= [key, door, box, table]
@@ -78,7 +78,7 @@ class SecondRoom(Room):
         ax = Item("ax", item_def="ax.n.01", actions=["chop"], action_def=["chop.v.06"], description="The axe is so heavy and sharp.") 
         ax_head = CombinableItem("ax_head", "ax_head.n.01", "handle", ax, description="This is the head of the axe.")
         handle = CombinableItem("handle", "handle.n.01", "ax_head", ax, description="This is the head of the axe.")
-        window = UnlockItem("window", item_def="window.n.01", actions=["break"], success=False, action_def=["unlock.v.01"], required_items= "axe",description="The window is made of glass.", unlock_msg="You successfully escaped!")
+        window = UnlockItem("window", item_def="window.n.01", actions=["break"], action_def=["break.v.01"], unlock_action="break", required_items= "axe",description="The window is made of glass.", unlock_msg="You successfully escaped!")
         self.items_in_room=[ax_head, handle, window]
 
         print("Second Room Created!")

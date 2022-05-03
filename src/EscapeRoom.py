@@ -1,3 +1,4 @@
+from email.policy import default
 from random import randrange
 from py import process
 import VoiceRecognitionUtils as vr 
@@ -15,7 +16,7 @@ import pygame
 import sys
 
 voice_input = False
-test = False
+test = True
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -145,15 +146,18 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
 
     click = pygame.mouse.get_pressed(3)
 
+
+    bg_rect = pygame.Rect(x,y,width,height)
+    pygame.draw.rect(screen, defaultcolour, bg_rect)
+
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
-        pygame.draw.rect(screen, hovercolour, (x,y,width, height))
+        bg_rect = pygame.Rect(x,y,width,height)
+        pygame.draw.rect(screen, hovercolour, bg_rect)
         if click[0] == 1:
             return True
-    else:
-        pygame.draw.rect(screen, defaultcolour, (x,y,width,height))
 
     buttontext = font.render(text, True, (0,0,255))
-    screen.blit(buttontext, ((screen_width-buttontext.get_width())/2, (screen_height-buttontext.get_height())/2))
+    screen.blit(buttontext, (bg_rect[0]+(width-buttontext.get_width())/2, bg_rect[1]+(height-buttontext.get_height())))
     
 
 
@@ -189,8 +193,8 @@ def endingScreen(room):
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        try_again_button = create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
-        next_level_button = create_button("Next Level", ((screen_width-125)/2), (screen_height+35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        try_again_button = create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 200, 50, (255,255,255), (255,255,0), medium_font)
+        next_level_button = create_button("Next Level", ((screen_width-125)/2), (screen_height+150)/2, 200, 50, (255,255,255), (255,255,0), medium_font)
         
         if try_again_button:
             playLevel(rooms[room.level-1])
@@ -224,7 +228,6 @@ def playLevel(room):
     # Initilise the room with objects
     room.initialiseRoom()
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
-
     while not room.succeedCondition():
         screen.fill((0,0,0))
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
@@ -255,7 +258,7 @@ def playLevel(room):
 
                 else:
                     user_input +=event.unicode
-
+        
         pygame.draw.rect(screen, (255,255,0), input_rect)
         text_surface = medium_font.render(user_input, True, (255, 0, 255))
         screen.blit(text_surface,input_rect.topleft)
@@ -282,14 +285,16 @@ if __name__ == "__main__":
     else:
         # Check processSpeech and processAction functions
         initialiseGame()
-        rooms[0].initialiseRoom()
-        print(rooms[0].items_in_room)
+        rooms[1].initialiseRoom()
+        print(rooms[1].items_in_room)
         # user_input = input("Input: ")
-        user_input = "investigate the padlock and unlock it with 1234"
-        actions_dobjects = vr.processSpeech(user_input)
-        response = ""
-        for i in actions_dobjects:
-            response += processAction(rooms[0],i)
+
+        while True:
+            user_input = input("Input: ")
+            actions_dobjects = vr.processSpeech(user_input)
+            response = ""
+            for i in actions_dobjects:
+                response += processAction(rooms[1],i)
 
 
        # Check item.def

@@ -63,7 +63,7 @@ def identifyActionsAndObjects(speech):
                         indirect_object = token.text + "_" +  temp[0]
                     else :
                         direct_object = token.text + "_" + temp[0]
-                elif token.head.pos_ == "ADP":
+                elif token.head.pos_ != "ADP":
                     direct_object = token.text
                 else:
                     indirect_object = token.text
