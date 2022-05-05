@@ -1,5 +1,6 @@
 from tokenize import Token
 import spacy
+import neuralcoref
 from spacy.matcher import Matcher
 # import neuralcoref
 import speech_recognition as sr
@@ -95,9 +96,9 @@ def IdentifyNoun(input):
     matcher = Matcher(nlp.vocab)
     # Add match ID "HelloWorld
     # " with no callback and one pattern
-    pattern_1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN", "OP": "+"}]
-    pattern_2 = [{"POS": "NOUN"}, {"LOWER": "of"}, {"POS": "NOUN"}]
-    matcher.add("Noun", [pattern_1, pattern_2])
+    pattern_1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN"},{"LOWER":"of", "OP": "*"}, {"POS":"NOUN", "OP":"*"}]
+    # pattern_2 = [{"POS": "NOUN"}, {"LOWER": "of"}, {"POS": "NOUN"}]
+    matcher.add("Noun", [pattern_1])
 
     doc = nlp(input)
     matches = matcher(doc)
@@ -120,29 +121,31 @@ def stopWordRemoval(input):
     return " ".join(str(x) for x in filtered)
 
 
-# def coreferenceResolution(input, max_dist = 500):
+def coreferenceResolution(input, max_dist = 500):
         
-#     en_nlp = spacy.load('en_core_web_sm')
-#     # print(en_nlp.pipe_names)
-#     coref = neuralcoref.NeuralCoref(en_nlp.vocab, max_dist=max_dist)
-#     en_nlp.add_pipe(coref, name='neuralcoref')
+    en_nlp = spacy.load('en_core_web_sm')
 
-#     # with open("user_input_log.txt", "r") as f:
-#     #     doc = en_nlp(f.read())
-#     doc = en_nlp(input)
-
-#     # current_input  = en_nlp(input)
-#     resolved = doc._.coref_resolved
-
-#     # with open("user_input_log.txt", "w") as f:
-#     #     f.write(resolved)    
-#     return resolved
-#     # current_input = en_nlp(resolved.split("\n")[-2])
-#     # print(resolved.split("\n"))
+    coref = neuralcoref.NeuralCoref(en_nlp.vocab)
+    en_nlp.add_pipe(coref, name='neuralcoref')
 
 
-#     # return current_input
+    # with open("user_input_log.txt", "r") as f:
+    #     doc = en_nlp(f.read())
+    doc = en_nlp(input)
 
+    resolved = doc._.coref_resolved
+    # current_input  = en_nlp(input)
+
+    # with open("user_input_log.txt", "w") as f:
+    #     f.write(resolved)    
+    return resolved
+    # current_input = en_nlp(resolved.split("\n")[-2])
+    # print(resolved.split("\n"))
+
+
+    # return current_input
+
+    
 
 
 def processSpeech(input):

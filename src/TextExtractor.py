@@ -5,8 +5,8 @@ import VoiceRecognitionUtils as vr
 def ContentExtractor(text):
 
     # Coreference resolution
-    # resolved = vr.coreferenceResolution(text)
-    # print("Resolved text: ", resolved)
+    resolved = vr.coreferenceResolution(text)
+    print("Resolved text: ", resolved)
 
     
     filtered = vr.stopWordRemoval(text)
