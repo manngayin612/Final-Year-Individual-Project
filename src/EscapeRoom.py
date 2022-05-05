@@ -250,7 +250,7 @@ def playLevel(room):
                 elif event.key == pygame.K_RETURN:
 
                     print(user_input)
-                    processed_inputs = vr.processSpeech(user_input)
+                    processed_inputs = vr.processSpeech( user_input)
                     for input in processed_inputs:
                         response = processAction(room,input)
 

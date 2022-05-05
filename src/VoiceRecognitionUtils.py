@@ -91,12 +91,12 @@ def identifyActionsAndObjects(speech):
 
     return inputs
 
-def IdentifyNoun(input):
-    nlp = spacy.load("en_core_web_sm")
+def identifyNoun(nlp, input):
+    
     matcher = Matcher(nlp.vocab)
     # Add match ID "HelloWorld
     # " with no callback and one pattern
-    pattern_1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN"},{"LOWER":"of", "OP": "*"}, {"POS":"NOUN", "OP":"*"}]
+    pattern_1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN"}]
     # pattern_2 = [{"POS": "NOUN"}, {"LOWER": "of"}, {"POS": "NOUN"}]
     matcher.add("Noun", [pattern_1])
 
@@ -107,6 +107,46 @@ def IdentifyNoun(input):
         string_id = nlp.vocab.strings[match_id]  # Get string representation
         span = doc[start:end]  # The matched span
         print(match_id, string_id, start, end, span.text)
+
+def identifyVerb(nlp, input):
+    matcher = Matcher(nlp.vocab)
+
+          #define the pattern 
+
+    pattern1 = [{"POS":"VERB"}, {"POS":"PART", "OP":"*"}, {"POS":"ADV", "OP":"*"}]
+
+    pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, {"POS": "DET", "OP":"*"},
+                {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}]
+
+
+    matcher.add("verb", [pattern1, pattern2])
+
+    doc = nlp(input)
+    matches = matcher(doc)
+    prev_span = None
+    new_matches = []
+    for match_id, start, end in matches:
+
+        if prev_span != None:
+            (prev_id, prev_start, prev_end) = prev_span
+            #Merge case: one span is within another span
+            
+            if prev_end  >= start+1 and prev_end <= end:
+                print("DELETED {} {} {} {}".format(string_id, start, end ,span.text))
+                matches.remove((prev_id, prev_start, prev_end))
+        string_id = nlp.vocab.strings[match_id]
+        span = doc[start:end]
+        print(match_id, string_id, start, end ,span.text)
+        prev_span = (match_id, start, end)
+        
+        
+
+def findLongestSpan(text_spans):
+    if len(text_spans) == 0 :
+        return None
+
+    sorted_span = sorted(text_spans, key=lambda s:s.length, reverse=True)
+    return sorted_span[0]
 
 
 
@@ -121,34 +161,20 @@ def stopWordRemoval(input):
     return " ".join(str(x) for x in filtered)
 
 
-def coreferenceResolution(input, max_dist = 500):
-        
-    en_nlp = spacy.load('en_core_web_sm')
+def coreferenceResolution(nlp, input, max_dist = 500):
+    coref = neuralcoref.NeuralCoref(nlp.vocab, max_dist= max_dist)
+    nlp.add_pipe(coref, name='neuralcoref')
 
-    coref = neuralcoref.NeuralCoref(en_nlp.vocab)
-    en_nlp.add_pipe(coref, name='neuralcoref')
-
-
-    # with open("user_input_log.txt", "r") as f:
-    #     doc = en_nlp(f.read())
-    doc = en_nlp(input)
+    doc = nlp(input)
 
     resolved = doc._.coref_resolved
-    # current_input  = en_nlp(input)
-
-    # with open("user_input_log.txt", "w") as f:
-    #     f.write(resolved)    
     return resolved
-    # current_input = en_nlp(resolved.split("\n")[-2])
-    # print(resolved.split("\n"))
-
-
-    # return current_input
 
     
 
 
 def processSpeech(input):
+    nlp = spacy.load("en_core_web_sm")
     # Save current input to the log
     f = open("user_input_log.txt", "a")
     f.write(input+".\n")
@@ -157,7 +183,7 @@ def processSpeech(input):
     with open("user_input_log.txt", "r") as f:
         log = f.read()
 
-    resolved = coreferenceResolution(log, max_dist=1)
+    resolved = coreferenceResolution(nlp, log, max_dist=1)
     current_input = resolved.split("\n")[-2]
 
     print("Result from crefernceREsolution",current_input)
