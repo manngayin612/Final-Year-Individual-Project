@@ -1,6 +1,7 @@
 from tokenize import Token
 import spacy
-import neuralcoref
+from spacy.matcher import Matcher
+# import neuralcoref
 import speech_recognition as sr
 from Input import Input
 import ChatGenerator 
@@ -90,51 +91,57 @@ def identifyActionsAndObjects(speech):
     return inputs
 
 def IdentifyNoun(input):
-    en_nlp = spacy.load('en')
-    en_nlp.add_pipe("spacy_wordnet", after='tagger', config={'lang': en_nlp.lang})
-    speech =  en_nlp(input)
+    nlp = spacy.load("en_core_web_sm")
+    matcher = Matcher(nlp.vocab)
+    # Add match ID "HelloWorld
+    # " with no callback and one pattern
+    pattern_1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN", "OP": "+"}]
+    pattern_2 = [{"POS": "NOUN"}, {"LOWER": "of"}, {"POS": "NOUN"}]
+    matcher.add("Noun", [pattern_1, pattern_2])
 
-    nouns = []
-    for token in speech:
+    doc = nlp(input)
+    matches = matcher(doc)
+
+    for match_id, start, end in matches:
+        string_id = nlp.vocab.strings[match_id]  # Get string representation
+        span = doc[start:end]  # The matched span
+        print(match_id, string_id, start, end, span.text)
+
+
+
+def stopWordRemoval(input):
+    stopwords = ["a", "the", "an"]
+
+    filtered = []
+    for token in input.split():
+        if token.lower() not in stopwords:
+            filtered.append(token)
+
+    return " ".join(str(x) for x in filtered)
+
+
+# def coreferenceResolution(input, max_dist = 500):
         
-        if token.pos_ == 'NOUN':
-            nouns.append(token)
-            print("-"*10)
-            print(token)
-            for ss in token._.wordnet.synsets():
-                if(ss.name().split(".")[1] == "n"):
-                    print("{}".format(ss.definition()))
+#     en_nlp = spacy.load('en_core_web_sm')
+#     # print(en_nlp.pipe_names)
+#     coref = neuralcoref.NeuralCoref(en_nlp.vocab, max_dist=max_dist)
+#     en_nlp.add_pipe(coref, name='neuralcoref')
 
-            #TODO: Maybe can filter the definition for the appropriate domains
-            # synsets = token._.wordnet.wordnet_synsets_for_domain(["furniture"])
-            # for ss in synsets:
-            #     print(ss.name(), ss.definition())
-            
-    print(set(nouns))
+#     # with open("user_input_log.txt", "r") as f:
+#     #     doc = en_nlp(f.read())
+#     doc = en_nlp(input)
 
-def coreferenceResolution(input):
-        
-    en_nlp = spacy.load('en')
-    # print(en_nlp.pipe_names)
-    coref = neuralcoref.NeuralCoref(en_nlp.vocab, max_dist=1)
-    en_nlp.add_pipe(coref, name='neuralcoref')
+#     # current_input  = en_nlp(input)
+#     resolved = doc._.coref_resolved
 
-    with open("user_input_log.txt", "r") as f:
-        doc = en_nlp(f.read())
+#     # with open("user_input_log.txt", "w") as f:
+#     #     f.write(resolved)    
+#     return resolved
+#     # current_input = en_nlp(resolved.split("\n")[-2])
+#     # print(resolved.split("\n"))
 
 
-
-    current_input  = en_nlp(input)
-    resolved = doc._.coref_resolved
-
-    # with open("user_input_log.txt", "w") as f:
-    #     f.write(resolved)
-    
-    current_input = en_nlp(resolved.split("\n")[-2])
-    print(resolved.split("\n"))
-
-
-    return current_input
+#     # return current_input
 
 
 
@@ -144,7 +151,12 @@ def processSpeech(input):
     f.write(input+".\n")
     f.close()
 
-    current_input = coreferenceResolution(input)
+    with open("user_input_log.txt", "r") as f:
+        log = f.read()
+
+    resolved = coreferenceResolution(log, max_dist=1)
+    current_input = resolved.split("\n")[-2]
+
     print("Result from crefernceREsolution",current_input)
 
 
