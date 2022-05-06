@@ -96,83 +96,40 @@ def identifyNoun(nlp, input):
     matcher = Matcher(nlp.vocab)
     # Add match ID "HelloWorld
     # " with no callback and one pattern
-    pattern_1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN"}]
-    # pattern_2 = [{"POS": "NOUN"}, {"LOWER": "of"}, {"POS": "NOUN"}]
-    matcher.add("Noun", [pattern_1])
+    # pattern1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN"} ]
+    pattern2 = [{"POS": "NOUN"},{"POS": "NOUN", "OP":"*"}]
+    pattern3 = [{"POS": "NOUN"}, {"LOWER": "of"},{"POS": "DET", "OP":"?"},{"POS":"NOUN"}]
+    matcher.add("Noun", [pattern2, pattern3])
 
     doc = nlp(input)
     matches = matcher(doc)
 
-    for match_id, start, end in matches:
-        string_id = nlp.vocab.strings[match_id]  # Get string representation
-        span = doc[start:end]  # The matched span
-        print(match_id, string_id, start, end, span.text)
+    noun_phrases = findLongestSpan(nlp, doc, matches)
+    return noun_phrases
+
+
 
 def identifyVerb(nlp, input):
     matcher = Matcher(nlp.vocab)
 
-          #define the pattern 
-
+    #define the pattern 
     pattern1 = [{"POS":"VERB"}, {"POS":"PART", "OP":"*"}, {"POS":"ADV", "OP":"*"}]
 
-    pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, {"POS": "DET", "OP":"*"},
-                {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}]
+    pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, 
+                # {"POS": "DET", "OP":"*"},
+                # {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}
+                ]
 
 
     matcher.add("verb", [pattern1, pattern2])
 
     doc = nlp(input)
     matches = matcher(doc)
-    prev_span = None
-    new_matches = []
-    
-    print("\nStart Matches")
-    for (_, start, end) in matches:
-        print(start, end, getSpanText(doc, start,end))
 
-    longest_span = matches[0]
-    for match_id, start, end in matches:
-        print("\n")
-        string_id = nlp.vocab.strings[match_id]
-        print(match_id, string_id, start, end ,getSpanText(doc, start, end))
-        if longest_span != None:
-            (prev_id, prev_start, prev_end) = longest_span
-            #Merge case: one span is within another span e.g. "is writing a blog" "a blog"
-            if prev_start  >= start+1 and prev_end <= end:
-                print("DELETED {} {} {}".format( prev_start, prev_end , getSpanText(doc, prev_start, prev_end)))
-                longest_span = (match_id, start, end) 
-            elif prev_end  == start:
-                # matches.append((prev_id, prev_start, end))
-                print("ADDED {} {} {}".format(prev_start, end ,getSpanText(doc, prev_start, end)))
-                # matches.remove((prev_id, prev_start, prev_end))
-                print("DELETED {} {} {}".format(prev_start, prev_end ,getSpanText(doc, prev_start, prev_end)))
-                # matches.remove((match_id, start, end))
-                print("DELETED {} {} {}".format(start, end ,getSpanText(doc, start, end)))
-                longest_span = (match_id, prev_start, end)
-            elif start >= prev_start and start <= prev_end:
-                longest_span = (match_id, prev_start, end)
-                print("ADDED {} {} {}".format(prev_start, end, getSpanText(doc, prev_start, end)))
-                print("DELETED {} {} {}".format(prev_start, prev_end, getSpanText(doc, prev_start, prev_end)))
-                print("DELETED {}{}{}".format(start, end, getSpanText(doc, start, end)))
-            else:
-                if longest_span not in new_matches:
-                    print("Add {} to new_matches".format(longest_span))
-                    new_matches.append(longest_span)
-                new_matches.append(longest_span)
-                longest_span = (match_id, start, end)
-
-        print("TEMP:", longest_span)
-
-    new_matches.append(longest_span)
-    new_matches = set(new_matches)
+    verb_phrases = findLongestSpan(nlp, doc, matches)
+    return verb_phrases
 
 
-
-
-
-    print("\nFinal Matches")
-    for (_, start, end) in new_matches:
-        print(start, end, getSpanText(doc, start,end))
 
    
 
@@ -182,13 +139,48 @@ def getSpanText(doc, start, end):
         
         
 
-def findLongestSpan(text_spans):
-    if len(text_spans) == 0 :
-        return None
+def findLongestSpan(nlp, doc, matches):
+    
+    new_matches = []
+    
+    longest_span = matches[0]
+    for match_id, start, end in matches:
+        # print("\n")
+        string_id = nlp.vocab.strings[match_id]
+        # print(match_id, string_id, start, end ,getSpanText(doc, start, end))
+        if longest_span != None:
+            (prev_id, prev_start, prev_end) = longest_span
+            #Merge case: one span is within another span e.g. "is writing a blog" "a blog"
+            if prev_start  >= start+1 and prev_end <= end:
+                # print("DELETED {} {} {}".format( prev_start, prev_end , getSpanText(doc, prev_start, prev_end)))
+                longest_span = (match_id, start, end) 
+            elif prev_end  == start:
+                # print("ADDED {} {} {}".format(prev_start, end ,getSpanText(doc, prev_start, end)))
+                # print("DELETED {} {} {}".format(prev_start, prev_end ,getSpanText(doc, prev_start, prev_end)))
+                # print("DELETED {} {} {}".format(start, end ,getSpanText(doc, start, end)))
+                longest_span = (match_id, prev_start, end)
+            elif start >= prev_start and start <= prev_end:
+                longest_span = (match_id, prev_start, end)
+                # print("ADDED {} {} {}".format(prev_start, end, getSpanText(doc, prev_start, end)))
+                # print("DELETED {} {} {}".format(prev_start, prev_end, getSpanText(doc, prev_start, prev_end)))
+                # print("DELETED {}{}{}".format(start, end, getSpanText(doc, start, end)))
+            else:
+                if getSpanText(doc, longest_span[1], longest_span[2]) not in new_matches:
+                    # print("Add {} to new_matches".format(longest_span))
+                    new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
+                new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
+                longest_span = (match_id, start, end)
 
-    sorted_span = sorted(text_spans, key=lambda s:s.length, reverse=True)
-    return sorted_span[0]
+        # print("TEMP:", longest_span)
 
+    new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
+  
+
+    # print("\nFinal Matches")
+    # for (_, start, end) in new_matches:
+    #     print(start, end, getSpanText(doc, start,end))
+
+    return new_matches
 
 
 def stopWordRemoval(input):
@@ -205,9 +197,7 @@ def stopWordRemoval(input):
 def coreferenceResolution(nlp, input, max_dist = 500):
     coref = neuralcoref.NeuralCoref(nlp.vocab, max_dist= max_dist)
     nlp.add_pipe(coref, name='neuralcoref')
-
     doc = nlp(input)
-
     resolved = doc._.coref_resolved
     return resolved
 

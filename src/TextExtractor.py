@@ -1,5 +1,5 @@
-import VoiceRecognitionUtils as vr
 import spacy 
+import VoiceRecognitionUtils as vr
 
 
 
@@ -7,28 +7,31 @@ def ContentExtractor(text):
     nlp = spacy.load("en_core_web_sm")
 
     # Coreference resolution
-    # resolved = vr.coreferenceResolution(nlp, text)
-    # print("Resolved text: ", resolved)
+    text = vr.coreferenceResolution(nlp, text)
+    print("Resolved text: ", text)
 
     
-    # filtered = vr.stopWordRemoval(text)
-    # print("Filtered: ", filtered)
-
-    # print("Noun Extracted")
-    # vr.identifyNoun(nlp, filtered)
-
-    print("Verbs Extracted")
-    vr.identifyVerb(nlp, text)
+    # text = vr.stopWordRemoval(text)
+    # print("Filtered: ", text)
 
 
 
+    doc = nlp(text)
+
+    for sent in doc.sents:
+        print(sent.text)
+        print("Noun Extracted")
+        objects = vr.identifyNoun(nlp, sent.text)
+        print(set(objects))
+
+        print("Verbs Extracted")
+        actions = vr.identifyVerb(nlp, sent.text)
+        print(set(actions))
 
 
 
 
-
-
-text = "There is a table in the room. There is a key on the table and it is used to unlock the door. The head of the ax is lying on the ground"
+text = "There is a wooden table in the middle of the room. On the table, there is a little box with a number lock. The password of the number lock is 1234. After unlocking the box, a key is inside to unlock the door."
 
 ContentExtractor(text)
 
