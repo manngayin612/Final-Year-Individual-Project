@@ -125,19 +125,60 @@ def identifyVerb(nlp, input):
     matches = matcher(doc)
     prev_span = None
     new_matches = []
-    for match_id, start, end in matches:
+    
+    print("\nStart Matches")
+    for (_, start, end) in matches:
+        print(start, end, getSpanText(doc, start,end))
 
-        if prev_span != None:
-            (prev_id, prev_start, prev_end) = prev_span
-            #Merge case: one span is within another span
-            
-            if prev_end  >= start+1 and prev_end <= end:
-                print("DELETED {} {} {} {}".format(string_id, start, end ,span.text))
-                matches.remove((prev_id, prev_start, prev_end))
+    longest_span = matches[0]
+    for match_id, start, end in matches:
+        print("\n")
         string_id = nlp.vocab.strings[match_id]
-        span = doc[start:end]
-        print(match_id, string_id, start, end ,span.text)
-        prev_span = (match_id, start, end)
+        print(match_id, string_id, start, end ,getSpanText(doc, start, end))
+        if longest_span != None:
+            (prev_id, prev_start, prev_end) = longest_span
+            #Merge case: one span is within another span e.g. "is writing a blog" "a blog"
+            if prev_start  >= start+1 and prev_end <= end:
+                print("DELETED {} {} {}".format( prev_start, prev_end , getSpanText(doc, prev_start, prev_end)))
+                longest_span = (match_id, start, end) 
+            elif prev_end  == start:
+                # matches.append((prev_id, prev_start, end))
+                print("ADDED {} {} {}".format(prev_start, end ,getSpanText(doc, prev_start, end)))
+                # matches.remove((prev_id, prev_start, prev_end))
+                print("DELETED {} {} {}".format(prev_start, prev_end ,getSpanText(doc, prev_start, prev_end)))
+                # matches.remove((match_id, start, end))
+                print("DELETED {} {} {}".format(start, end ,getSpanText(doc, start, end)))
+                longest_span = (match_id, prev_start, end)
+            elif start >= prev_start and start <= prev_end:
+                longest_span = (match_id, prev_start, end)
+                print("ADDED {} {} {}".format(prev_start, end, getSpanText(doc, prev_start, end)))
+                print("DELETED {} {} {}".format(prev_start, prev_end, getSpanText(doc, prev_start, prev_end)))
+                print("DELETED {}{}{}".format(start, end, getSpanText(doc, start, end)))
+            else:
+                if longest_span not in new_matches:
+                    print("Add {} to new_matches".format(longest_span))
+                    new_matches.append(longest_span)
+                new_matches.append(longest_span)
+                longest_span = (match_id, start, end)
+
+        print("TEMP:", longest_span)
+
+    new_matches.append(longest_span)
+    new_matches = set(new_matches)
+
+
+
+
+
+    print("\nFinal Matches")
+    for (_, start, end) in new_matches:
+        print(start, end, getSpanText(doc, start,end))
+
+   
+
+
+def getSpanText(doc, start, end):
+    return doc[start:end]
         
         
 
