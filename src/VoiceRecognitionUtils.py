@@ -120,22 +120,32 @@ def identifyVerb(nlp, input):
                 # {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}
                 ]
 
-
     matcher.add("verb", [pattern1, pattern2])
 
     doc = nlp(input)
+
     matches = matcher(doc)
+    
+    if len(matches) > 0:
+        verb_phrases = findLongestSpan(nlp, doc, matches)
+        return verb_phrases
+    else:
+        return []
 
-    verb_phrases = findLongestSpan(nlp, doc, matches)
-    return verb_phrases
-
-
-
+def matchObjectWithAction(dict, nlp, sent, nouns, verbs):
+    doc = nlp(sent)
+    for n in nouns:
+        for token in doc:
+            if str(n) == token.lemma_:
+                dict[token.lemma_] = []
+                if token.head.lemma_ in verbs:
+                    dict[token.lemma_].append(token.head.lemma_)
+    return dict
    
 
 
 def getSpanText(doc, start, end):
-    return doc[start:end]
+    return str(doc[start:end])
         
         
 

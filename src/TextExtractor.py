@@ -14,9 +14,10 @@ def ContentExtractor(text):
     # text = vr.stopWordRemoval(text)
     # print("Filtered: ", text)
 
-
-
     doc = nlp(text)
+
+    pairs = {}
+
 
     for sent in doc.sents:
         print(sent.text)
@@ -26,7 +27,15 @@ def ContentExtractor(text):
 
         print("Verbs Extracted")
         actions = vr.identifyVerb(nlp, sent.text)
-        print(set(actions))
+        if len(actions) >0:
+            print(set(actions))
+        else:
+            print("No action identified")
+
+        print("\n")
+        pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions)
+
+    print(pairs)
 
 
 
