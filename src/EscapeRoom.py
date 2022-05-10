@@ -16,7 +16,7 @@ import pygame
 import sys
 
 voice_input = False
-test = True
+test = False
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -110,6 +110,7 @@ def processAction(room, processed_input):
     # for (action, direct_object, pw) in actions_dobjects_pw:
     start = time.process_time()
     processed_input.item = identifyObject(room, processed_input.item)
+    
     print("Processed_input item in processAction()", processed_input.item.getActions())
     if processed_input.tool != "":
         processed_input.tool = identifyObject(room, processed_input.tool)

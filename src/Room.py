@@ -37,7 +37,7 @@ class FirstRoom(Room):
     def __init__(self, level, bag):
         super().__init__(level, bag)
         self.title = "Welcome to the first room."
-        self.description = "You are in an empty room with a little wooden table by the window. Try to escape."
+        self.description = "You are in an empty room with a little wooden table in the middle of the room. Try to escape."
 
     def initialiseRoom(self):
         self.bag = []
@@ -77,8 +77,8 @@ class SecondRoom(Room):
         self.currentItems = ["ax_head", "handle", "window"]
         ax = Item("ax", item_def="ax.n.01", actions=["chop"], action_def=["chop.v.06"], description="The axe is so heavy and sharp.") 
         ax_head = CombinableItem("ax_head", "ax_head.n.01", "handle", ax, description="This is the head of the axe.")
-        handle = CombinableItem("handle", "handle.n.01", "ax_head", ax, description="This is the head of the axe.")
-        window = UnlockItem("window", item_def="window.n.01", actions=["break"], action_def=["break.v.01"], unlock_action="break", required_items= "axe",description="The window is made of glass.", unlock_msg="You successfully escaped!")
+        handle = CombinableItem("handle", "handle.n.01", "ax_head", ax, description="This is the handle of the axe.")
+        window = UnlockItem("window", item_def="window.n.01", actions=["break"], action_def=["break.v.01"], unlock_action="break", required_items= "ax",description="The window is made of glass.", unlock_msg="You successfully escaped!")
         self.items_in_room=[ax_head, handle, window]
 
         print("Second Room Created!")

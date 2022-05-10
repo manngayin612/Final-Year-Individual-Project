@@ -38,7 +38,7 @@ def recogniseSpeech():
 
 
 
-def identifyActionsAndObjects(speech):
+def identifyActionsAndObjects(nlp, speech):
     # print("DETAILS OF SPEECH")
     # for token in speech:
     
@@ -50,6 +50,7 @@ def identifyActionsAndObjects(speech):
 
     inputs = []
     temp = ()
+    speech = nlp(speech)
     for token in speech:
         print(token.text, token.pos_, token.dep_, token.head.text)
         # print(action, direct_object, indirect_object)
@@ -97,7 +98,7 @@ def identifyNoun(nlp, input):
     # Add match ID "HelloWorld
     # " with no callback and one pattern
     # pattern1 = [{"POS":"ADJ", "OP" : "?"}, {"POS": "NOUN"} ]
-    pattern2 = [{"POS": "NOUN"},{"POS": "NOUN", "OP":"*"}]
+    pattern2 = [{"POS": "NOUN"},{"POS": "NOUN", "OP":"?"}]
     pattern3 = [{"POS": "NOUN"}, {"LOWER": "of"},{"POS": "DET", "OP":"?"},{"POS":"NOUN"}]
     matcher.add("Noun", [pattern2, pattern3])
 
@@ -141,6 +142,10 @@ def matchObjectWithAction(dict, nlp, sent, nouns, verbs):
                 if token.head.lemma_ in verbs:
                     dict[token.lemma_].append(token.head.lemma_)
     return dict
+
+def getRoot(nlp, sent):
+    # doc = nlp(sent)
+    return sent.root
    
 
 
@@ -230,7 +235,7 @@ def processSpeech(input):
     print("Result from crefernceREsolution",current_input)
 
 
-    inputs = identifyActionsAndObjects(current_input)
+    inputs = identifyActionsAndObjects(nlp, current_input)
     print("Input result from identifyActionsAndObjects: ", inputs)
     # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
 

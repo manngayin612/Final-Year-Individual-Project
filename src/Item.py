@@ -113,9 +113,9 @@ class CombinableItem(Item):
         self.finished_item = finished_item
         self.combine_with = combine_with
 
-    
-    def getName(self):
-        return self.__name + " of " + self.finished_item.getName()
+
+ 
+
 
     def combineWith(self, room, component):
         if component.getName() == self.combine_with:
