@@ -126,6 +126,7 @@ def identifyVerb(nlp, input):
     doc = nlp(input)
 
     matches = matcher(doc)
+    print(matches)
     
     if len(matches) > 0:
         verb_phrases = findLongestSpan(nlp, doc, matches)
@@ -133,15 +134,18 @@ def identifyVerb(nlp, input):
     else:
         return []
 
-def matchObjectWithAction(dict, nlp, sent, nouns, verbs):
+def matchObjectWithAction(matches, nlp, sent, nouns, verbs):
     doc = nlp(sent)
+    print(doc, " in matchObjectWithAction")
     for n in nouns:
         for token in doc:
-            if str(n) == token.lemma_:
-                dict[token.lemma_] = []
-                if token.head.lemma_ in verbs:
-                    dict[token.lemma_].append(token.head.lemma_)
-    return dict
+            if str(n).lower() == token.lemma_:
+                matches[token.lemma_] = []
+                print(token.lemma_, token.head.text)
+                if token.head.lemma_.lower() in verbs:
+                    print(token.head.lemma_.lower())
+                    matches[token.lemma_].append(token.head.lemma_.lower())
+    return matches
 
 def getRoot(nlp, sent):
     # doc = nlp(sent)

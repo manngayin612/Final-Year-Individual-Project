@@ -1,3 +1,5 @@
-pick up the handle.
-combine the handle with the head of ax.
-smash the window with the ax.
+investigate the table.
+unlock the box with 1234.
+open the door with the key.
+pick up the key.
+open the door with the key.

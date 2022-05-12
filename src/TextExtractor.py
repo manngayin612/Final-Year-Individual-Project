@@ -27,18 +27,21 @@ def ContentExtractor(text):
     for sent in doc.sents:
         print("Current: ",sent.text)
         root = vr.getRoot(nlp, sent)
-        objects = vr.identifyNoun(nlp, sent.text)
-        # print("Noun Extracted")
-        # print(set(objects))
+        objects = vr.identifyNoun(nlp, sent.text.lower())
 
-        actions = vr.identifyVerb(nlp, sent.text)
-        # print("Verbs Extracted")
-        # if len(actions) >0:
-        #     print(set(actions))
-        # else:
-        #     print("No action identified")
+        print("Noun Extracted")
+        print(set(objects))
 
-        pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions)
+        actions = vr.identifyVerb(nlp, sent.text.lower())
+        
+        print("Verbs Extracted")
+        if len(actions) >0:
+            print(set(actions))
+        else:
+            print("No action identified")
+
+        pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions) 
+        print(pairs)
 
         # for token in sent:
         #     if token.text in objects and token.head == root:

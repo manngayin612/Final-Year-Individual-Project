@@ -5,12 +5,11 @@ import VoiceRecognitionUtils as vr
 
 class Item:
 
-    def __init__(self, name, item_def, actions=[], action_def=[], description="blablabla"):
+    def __init__(self, name, item_def, actions=[], description="blablabla"):
         self.__name = name
         self.__item_def = item_def
-        self.__actions = {"investigate":"investigate.v.02"}
-        for i in range(len(actions)):
-            self.__actions[actions[i]] = action_def[i]
+        self.__actions = ["investigate"]
+        self.__actions.extend(actions)
         self.success = False
         self.__description = description
         
@@ -19,7 +18,7 @@ class Item:
 
 
     def getActions(self):
-        return self.__actions.items()
+        return self.__actions
 
     def getName(self):
         return self.__name
@@ -53,8 +52,8 @@ class Item:
 
 # Items that need certain items to unlock
 class UnlockItem(Item):
-    def __init__(self, name,  unlock_msg, item_def, required_items="", actions=["unlock"], action_def=["unlock.v.03"], unlock_action = "unlock", description="Exit Item"):
-        super().__init__(name, item_def, actions, action_def, description=description)
+    def __init__(self, name,  unlock_msg, item_def, required_items="", actions=["unlock"], unlock_action = "unlock", description="Exit Item"):
+        super().__init__(name, item_def, actions, description=description)
         self.required_items = required_items
         self.unlock_message = unlock_msg
         self.unlock_action = unlock_action
@@ -80,8 +79,8 @@ class UnlockItem(Item):
 
 # Items that need password to unlock
 class NumberLock(UnlockItem):
-    def __init__ (self, name, password, item_def, actions=["unlock"], action_def=["unlock.v.03"], description="blablabla", unlock_msg="You have got the correct password"):
-        super().__init__(name, unlock_msg, item_def, actions=actions, action_def = action_def, description=description,)
+    def __init__ (self, name, password, item_def, actions=["unlock"], description="blablabla", unlock_msg="You have got the correct password"):
+        super().__init__(name, unlock_msg, item_def, actions=actions, description=description,)
         self.password = password
 
     
@@ -108,8 +107,8 @@ class NumberLock(UnlockItem):
         return vr.generateResponse(msg)
 
 class CombinableItem(Item):
-    def __init__(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], action_def=["get.v.01", "combine.v.04"], description=""):
-        super().__init__(name, item_def, actions, action_def, description)
+    def __init__(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description=""):
+        super().__init__(name, item_def, actions, description)
         self.finished_item = finished_item
         self.combine_with = combine_with
 

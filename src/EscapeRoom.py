@@ -59,7 +59,6 @@ def identifyObject(room, item):
         max_wup = 0
         matching_obj_index = -1
         for i in range(len(room.items_in_room)):
-            print("Checking number of item in room",len(room.items_in_room))
             for ss in wn.synsets(item, pos=wn.NOUN):
                 if(ss.name().split(".")[0] == item):
                     # Check synonyms
@@ -87,19 +86,29 @@ def identifyAction(action, item):
     if actionFromCache != "":
         print("Found action from cache")
         return actionFromCache
+    elif action in item.getActions():
+        return action
     else:
+
         max_similarity = 0
         matching_action = ""
-        for (a,d) in item.getActions():
+        for assigned_action in item.getActions():
 
-            for ss in wn.synsets(action, pos=wn.VERB):
-                
-                # if(ss.name().split('.')[0] == action):
-                    
-                current_similarity = ss.lch_similarity(wn.synset(d)) 
-                if current_similarity > max_similarity:
-                    max_similarity = current_similarity
-                    matching_action = a
+            synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(assigned_action, pos=wn.VERB)])
+            hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(assigned_action, pos=wn.VERB) for h in ss.hypernyms()])
+            print(synonyms)
+            print(hypernyms)
+            if action in synonyms or action in hypernyms:
+                print("Found in Synonyms or Hypernyms")
+                return assigned_action
+            else:
+                print("Calculting similarity")
+                for ss in wn.synsets(action, pos=wn.VERB):
+                    for assigned_ss in wn.synsets(assigned_action, pos=wn.VERB):
+                        current_similarity = ss.lch_similarity(wn.synset(assigned_ss.name())) 
+                        if current_similarity > max_similarity:
+                            max_similarity = current_similarity
+                            matching_action = assigned_action
         print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
         writeToCache(matching_action, action)
         return matching_action if max_similarity > threshold else vr.generateResponse("I don't think you can do this.")
@@ -285,23 +294,32 @@ if __name__ == "__main__":
 
     else:
         # Check processSpeech and processAction functions
-        initialiseGame()
-        rooms[1].initialiseRoom()
-        print(rooms[1].items_in_room)
-        # user_input = input("Input: ")
+        # initialiseGame()
+        # rooms[1].initialiseRoom()
+        # print(rooms[1].items_in_room)
+        # # user_input = input("Input: ")
 
-        while True:
-            user_input = input("Input: ")
-            actions_dobjects = vr.processSpeech(user_input)
-            response = ""
-            for i in actions_dobjects:
-                response += processAction(rooms[1],i)
+        # while True:
+        #     user_input = input("Input: ")
+        #     actions_dobjects = vr.processSpeech(user_input)
+        #     response = ""
+        #     for i in actions_dobjects:
+        #         response += processAction(rooms[1],i)
 
 
-       # Check item.def
+    # Check item.def
         # check_word = input("Check this word: ")
-        # for ss in wn.synsets(check_word):
-        #     print(ss.definition(), ss.name())
+        # print(wn.synsets("pick"))
+        # for ss in wn.synsets("pick", pos=wn.VERB):
+        #     print(ss.hypernyms()[0])
+
+        #     hypernym = ss.hypernyms()[0]
+
+
+        # print([str(hypernyms.name().split(".")[0]) for hypernyms in wn.synsets("pick").hypernyms()])
+
+        print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
+        print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
 
     
         
