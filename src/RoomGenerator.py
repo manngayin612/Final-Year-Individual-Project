@@ -3,13 +3,13 @@ import TextExtractor as te
 import spacy
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
 from nltk.corpus import wordnet as wn
-from Item import Item, UnlockItem
+from Item import CombinableItem, Item, UnlockItem
 
 
-# Normal items: name, item_def, actions, action_def, description
-# Unlock items: name, unlock_msg, item_def, required_items, actions, action_def, unlock_action , description
+# Normal items: name, item_def, actions, description
+# Unlock items: name, unlock_msg, item_def, required_items, actions, unlock_action , description
 
-def createItems(object, action):
+def createItems(con, cur, object, action):
 
     nlp = spacy.load('en_core_web_sm')
     nlp.add_pipe(WordnetAnnotator(nlp.lang), after='tagger')
@@ -46,21 +46,41 @@ def createItems(object, action):
     description = input("Short description for {}: ".format(object))
     # TODO: deal with other objects mentioned in description
 
-    if action == "unlock":
-        type = "unlcok_item"
-    elif action == "combine":
-        type = "combinable_item"
+    unlock_msg = ""
+    required_item = ""
+
+    combine_with = ""
+    finished_item = ""
+    if "unlock" in action:
+        print("Creating Unlock Item")
+        # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
+        #Store it into SQL
+        insert_object = """INSERT INTO room (type, item, item_def, action, description, required_items, unlock_msg) VALUES (?,?,?,?,?,?,?) """
+        cur.execute(insert_object, ("unlock", item, item_def, str(a), description, required_item, unlock_msg))
+        con.commit()
+
+        #TODO: Special case of a numberlock
+
+    elif "combine" in action:
+        print("Creating Combinable Item")
+        # item = CombinableItem(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description="")
+        # Store to SQL
+        insert_object = """INSERT INTO room (type, item, item_def, action, description, combine_with, finished_item) VALUES (?,?,?,?,?,?,?)"""
+        cur.execute(insert_object, ("combine", item, item_def, str(a), description, combine_with, finished_item ))
+        con.commit()
+
     else:
-        type = "normal_item"
-        item = Item(item, item_def, description = description)
+        print("Creating Normal Item")
+        # item = Item(item, item_def, description = description)
+        # Store to SQL
 
-    
-
-
-
-    
-
-
+        insert_object = """INSERT INTO room
+                (type, item, item_def,  action, description) 
+                VALUES 
+                (?,?,?,?,?)"""
+        cur.execute(insert_object, ("normal",item, item_def, str(a), description ))
+        con.commit()
+        
 
 
         # print("Choose the definition for the object: ")
@@ -76,12 +96,22 @@ def createItems(object, action):
         # Checking actions:
 
 
+def createRoomDatabase():
+    con = sqlite3.connect("escaperoom.sqlite")
+    cur = con.cursor()
 
+    cur.execute('''DROP TABLE IF EXISTS room;''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS room(
+        type text,
+        item text, 
+        item_def text,
+        action text,
+        description text,
+        unlock_msg text,
+        required_items text,
+        unlock_action text)''')
 
-
-
-
-    
+    return con, cur
 
 
 # def createRoomDatabase():
@@ -129,13 +159,16 @@ def createItems(object, action):
 # # con.commit()
 
 # # con.close()
+con, cur = createRoomDatabase()
+
+print("DATABASE CREATED SUCCESSFULLY")
+
 nlp = spacy.load('en_core_web_sm')
-user_input = ("Unlock the box to get the key.")
+user_input = ("Take the key and unlock the door")
 
 pairs = te.ContentExtractor(user_input)
 print(pairs)
 for (o, a) in pairs.items(): 
-
-    createItems(o, a)
+    createItems(con, cur, o, a)
 
 

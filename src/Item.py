@@ -52,7 +52,7 @@ class Item:
 
 # Items that need certain items to unlock
 class UnlockItem(Item):
-    def __init__(self, name,  unlock_msg, item_def, required_items="", actions=["unlock"], unlock_action = "unlock", description="Exit Item"):
+    def __init__(self, name, item_def, unlock_msg, required_items="", actions=["unlock"], unlock_action = "unlock", description="Exit Item"):
         super().__init__(name, item_def, actions, description=description)
         self.required_items = required_items
         self.unlock_message = unlock_msg
@@ -79,8 +79,8 @@ class UnlockItem(Item):
 
 # Items that need password to unlock
 class NumberLock(UnlockItem):
-    def __init__ (self, name, password, item_def, actions=["unlock"], description="blablabla", unlock_msg="You have got the correct password"):
-        super().__init__(name, unlock_msg, item_def, actions=actions, description=description,)
+    def __init__ (self, name, password, item_def, required_items="password", actions=["unlock"], description="blablabla", unlock_msg="You have got the correct password"):
+        super().__init__(name, unlock_msg, item_def, required_items=required_items, actions=actions, description=description,)
         self.password = password
 
     
@@ -111,10 +111,6 @@ class CombinableItem(Item):
         super().__init__(name, item_def, actions, description)
         self.finished_item = finished_item
         self.combine_with = combine_with
-
-
- 
-
 
     def combineWith(self, room, component):
         if component.getName() == self.combine_with:

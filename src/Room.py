@@ -73,6 +73,7 @@ class SecondRoom(Room):
         self.description = "There is nothing in the room but only a window and some pieces on the floor."
 
     def initialiseRoom(self):
+
         self.bag = []
         self.currentItems = ["ax_head", "handle", "window"]
         ax = Item("ax", item_def="ax.n.01", actions=["chop"], description="The axe is so heavy and sharp.") 
@@ -80,7 +81,6 @@ class SecondRoom(Room):
         handle = CombinableItem("handle", "handle.n.01", "ax_head", ax, description="This is the handle of the axe.")
         window = UnlockItem("window", item_def="window.n.01", actions=["break"], unlock_action="break", required_items= "ax",description="The window is made of glass.", unlock_msg="You successfully escaped!")
         self.items_in_room=[ax_head, handle, window]
-
         print("Second Room Created!")
 
 
