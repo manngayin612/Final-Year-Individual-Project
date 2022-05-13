@@ -7,6 +7,7 @@ import speech_recognition as sr
 from Input import Input
 import ChatGenerator 
 from random import randrange
+from spacytextblob.spacytextblob import SpacyTextBlob
 
 # from spacy import displacy
 
@@ -97,7 +98,7 @@ def identifyNoun(nlp, input):
     matcher = Matcher(nlp.vocab)
     # Add match ID "HelloWorld
     # " with no callback and one pattern
-    pattern1 = [{"POS": "NOUN"} ]
+    pattern1 = [{"POS": "PROPN"} ]
     pattern2 = [{"POS": "NOUN"},{"POS": "NOUN", "OP":"?"}]
     pattern3 = [{"POS": "NOUN"}, {"LOWER": "of"},{"POS": "DET", "OP":"?"},{"POS":"NOUN"}]
     matcher.add("Noun", [pattern1, pattern2, pattern3])
@@ -227,7 +228,6 @@ def coreferenceResolution(nlp, input, max_dist = 500):
     resolved = doc._.coref_resolved
     return resolved
 
-    
 
 
 def processSpeech(input):

@@ -4,6 +4,7 @@ import spacy
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
 from nltk.corpus import wordnet as wn
 from Item import CombinableItem, Item, UnlockItem
+from nltk.corpus import wordnet as wn
 
 
 # Normal items: name, item_def, actions, description
@@ -14,21 +15,37 @@ def createItems(con, cur, object, action):
     nlp = spacy.load('en_core_web_sm')
     nlp.add_pipe(WordnetAnnotator(nlp.lang), after='tagger')
 
-    if object == "key":
-        item_def = "key.n.01"
-    elif "room" in object:
-        pass
+    if  "room" in object:
+        print("createItems: room ==> IGNORE")
+        return ""
     else:
+        print("createItem ==> SEARCHING DOMAIN")
         token = nlp(object)[0]
 
-        domain = ["furniture"]
-        # synsets = token._.wordnet.wordnet_synsets_for_domain(domain)        
+        domain = ["furniture", "home"]
+
         token._.wordnet.wordnet_domains()
-        # Choosing definition for the object
-        # in_domain = []
-        # for ss in token._.wordnet.synsets():
-        #     lemma_name = nlp(ss.name().split(".")[0])[0]
+
         in_domain = token._.wordnet.wordnet_synsets_for_domain(domain)
+
+        if len(in_domain)>0:
+            item_def = in_domain[0].name()
+
+        else:  
+            print("Searching for hypernym")
+
+            for ss in wn.synsets(object, pos=wn.NOUN):
+                print(ss.name())
+                for s in ss.closure(lambda s:s.hypernyms()):
+                    print(s.lemma_names())
+                    if "physical_object" in s.lemma_names():
+                        item_def = ss.name()
+                        break
+                else:
+                    continue
+            
+                break
+
         # print("in_domain: ",in_domain)
 
             # if lemma_name.text == object and ss in in_domain:
@@ -36,7 +53,7 @@ def createItems(con, cur, object, action):
             #     list_of_def.append((ss.name(), ss.definition()))
 
         # For now just randomly choose one coz it doesn't matter
-        item_def = in_domain[0].name()
+
     print(item_def, wn.synset(item_def).definition())
     item = object
 
@@ -167,7 +184,10 @@ con, cur = createRoomDatabase()
 
 print("DATABASE CREATED SUCCESSFULLY")
 
+
 nlp = spacy.load('en_core_web_sm')
+
+
 user_input = input("Tell me about the room:")
 # user_input=("The box is locked with the password 1234.")
 
@@ -183,6 +203,10 @@ while(not finished):
         pairs = te.ContentExtractor(user_input)
     
     if len(pairs) == 0 :
-        user_input = input("Do you have anything else to add?")
+        user_input = input("Do you have anything else to add? ")
+
         if user_input == "no":
             finished = True
+        else:
+            user_input = input("What else do you want to add? ")
+            pairs = te.ContentExtractor(user_input)
