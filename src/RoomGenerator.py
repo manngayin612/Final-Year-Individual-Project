@@ -16,6 +16,8 @@ def createItems(con, cur, object, action):
 
     if object == "key":
         item_def = "key.n.01"
+    elif "room" in object:
+        pass
     else:
         token = nlp(object)[0]
 
@@ -80,6 +82,8 @@ def createItems(con, cur, object, action):
                 (?,?,?,?,?)"""
         cur.execute(insert_object, ("normal",item, item_def, str(a), description ))
         con.commit()
+
+    return description
         
 
 
@@ -164,11 +168,21 @@ con, cur = createRoomDatabase()
 print("DATABASE CREATED SUCCESSFULLY")
 
 nlp = spacy.load('en_core_web_sm')
-user_input = ("Take the key and unlock the door")
+user_input = input("Tell me about the room:")
+# user_input=("The box is locked with the password 1234.")
 
+
+for token in nlp(user_input):
+    print(token, token.pos_)
 pairs = te.ContentExtractor(user_input)
 print(pairs)
-for (o, a) in pairs.items(): 
-    createItems(con, cur, o, a)
-
-
+finished = False
+while(not finished):
+    for (o, a) in pairs.items(): 
+        user_input = createItems(con, cur, o, a)
+        pairs = te.ContentExtractor(user_input)
+    
+    if len(pairs) == 0 :
+        user_input = input("Do you have anything else to add?")
+        if user_input == "no":
+            finished = True

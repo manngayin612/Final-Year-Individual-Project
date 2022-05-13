@@ -40,8 +40,8 @@ def ContentExtractor(text):
         else:
             print("No action identified")
 
-        pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions) 
-        print(pairs)
+        if len(objects) >0:
+            pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions) 
 
         # for token in sent:
         #     if token.text in objects and token.head == root:
