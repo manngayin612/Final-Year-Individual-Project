@@ -1,7 +1,5 @@
-check under the table.
-open the box.
-open the box with 1234.
-use the key to open the door.
-take the key.
-open the door with the key.
-combine the pieces.
+open the door.
+.
+pick up the key and open the door.
+nihao.
+.

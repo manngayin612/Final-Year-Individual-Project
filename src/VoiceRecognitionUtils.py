@@ -117,9 +117,12 @@ def identifyVerb(nlp, input):
     matcher = Matcher(nlp.vocab)
 
     #define the pattern 
+
+
     pattern1 = [{"POS":"VERB"}, {"POS":"PART", "OP":"*"}, {"POS":"ADV", "OP":"*"}]
 
     pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, 
+    
                 # {"POS": "DET", "OP":"*"},
                 # {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}
                 ]
@@ -139,12 +142,9 @@ def identifyVerb(nlp, input):
 
 def matchObjectWithAction(matches, nlp, sent, nouns, verbs):
     doc = nlp(sent)
-    print(type(nouns))
-    print(verbs)
-    # for n in nouns:
-    #     print("Noun comparing ",n)
+
     for token in doc:
-        print("Token checking; ", token, type(token))
+
         if str(token) in nouns:
             # if str(n).lower() == token.lemma_:
             matches[token.lemma_] = []

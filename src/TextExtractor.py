@@ -13,7 +13,7 @@ def ContentExtractor(text):
 
     # Coreference resolution
     text = vr.coreferenceResolution(nlp, text)
-    print("Resolved text: ", text)
+    # print("Resolved text: ", text)
 
     
     # text = vr.stopWordRemoval(text)
@@ -22,6 +22,9 @@ def ContentExtractor(text):
     doc = nlp(text)
 
     pairs = {}
+
+    for t in doc:
+        print(t.pos_)
 
 
     for sent in doc.sents:
@@ -39,6 +42,8 @@ def ContentExtractor(text):
             print(set(actions))
         else:
             print("No action identified")
+
+
 
         if len(objects) >0:
             pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions) 
