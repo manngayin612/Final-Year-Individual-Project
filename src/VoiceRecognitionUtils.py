@@ -1,3 +1,4 @@
+from json import tool
 from tokenize import Token
 import spacy
 import neuralcoref
@@ -7,7 +8,7 @@ import speech_recognition as sr
 from Input import Input
 import ChatGenerator 
 from random import randrange
-from spacytextblob.spacytextblob import SpacyTextBlob
+import VoiceRecognitionUtils as vr
 
 # from spacy import displacy
 
@@ -93,7 +94,7 @@ def identifyActionsAndObjects(nlp, speech):
 
     return inputs
 
-def identifyNoun(nlp, input):
+def identifySubject(nlp, input):
     
     matcher = Matcher(nlp.vocab)
     # Add match ID "HelloWorld
@@ -122,7 +123,7 @@ def identifyVerb(nlp, input):
     pattern1 = [{"POS":"VERB"}, {"POS":"PART", "OP":"*"}, {"POS":"ADV", "OP":"*"}]
 
     pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, 
-    
+
                 # {"POS": "DET", "OP":"*"},
                 # {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}
                 ]
@@ -136,22 +137,56 @@ def identifyVerb(nlp, input):
     
     if len(matches) > 0:
         verb_phrases = findLongestSpan(nlp, doc, matches)
-        return verb_phrases
+        return [vr.lemmatize(nlp, v) for v in verb_phrases]
     else:
         return []
 
-def matchObjectWithAction(matches, nlp, sent, nouns, verbs):
+def identifyTools(nlp, input):
+    matcher = Matcher(nlp.vocab)
+    doc = nlp(input)
+    
+    pattern1 = [{"DEP":"pobj"}]
+
+    matcher.add("tool", [pattern1])
+
+    matches = matcher(doc)
+
+    noun_phrases = findLongestSpan(nlp, doc, matches)
+    return noun_phrases
+
+
+def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
     doc = nlp(sent)
+    temp_tools = []
 
     for token in doc:
+        print(token.text,token.dep_, token.head.head.lemma_)
 
         if str(token) in nouns:
             # if str(n).lower() == token.lemma_:
-            matches[token.lemma_] = []
+            # direct_object = token.lemma_
+            # matches[direct_object] = (action, tools)
+            matches[token.lemma_] = ([],"")
             print("matching action ", token.lemma_, token.head.lemma_)
+            print(token.head.lemma_, verbs)
             if token.head.lemma_.lower() in verbs:
-                matches[token.lemma_].append(token.head.lemma_.lower())
+                # action = token.head.lemma_.lower()
+                matches[token.lemma_][0].append(token.head.lemma_.lower())
+            if token.dep_ == "pobj":
+                temp_tools.append(token)
+                
+    print(matches)
+    for t in temp_tools:
+        for (i, (a, _)) in matches.items():
+            if t.head.head.lemma_.lower() in a:
+                matches[i] = (a, t.lemma_)
+    print(matches)
+
+
+
     return matches
+
+
 
 def getRoot(nlp, sent):
     # doc = nlp(sent)
@@ -188,9 +223,6 @@ def findLongestSpan(nlp, doc, matches):
                     longest_span = (match_id, prev_start, end)
                 elif start >= prev_start and start <= prev_end:
                     longest_span = (match_id, prev_start, end)
-                    # print("ADDED {} {} {}".format(prev_start, end, getSpanText(doc, prev_start, end)))
-                    # print("DELETED {} {} {}".format(prev_start, prev_end, getSpanText(doc, prev_start, prev_end)))
-                    # print("DELETED {}{}{}".format(start, end, getSpanText(doc, start, end)))
                 else:
                     if getSpanText(doc, longest_span[1], longest_span[2]) not in new_matches:
                         # print("Add {} to new_matches".format(longest_span))
@@ -228,6 +260,8 @@ def coreferenceResolution(nlp, input, max_dist = 500):
     resolved = doc._.coref_resolved
     return resolved
 
+def lemmatize(nlp, input):
+    return " ".join([token.lemma_ for token in nlp(input)])
 
 
 def processSpeech(input):

@@ -15,6 +15,8 @@ def ContentExtractor(text):
     text = vr.coreferenceResolution(nlp, text)
     # print("Resolved text: ", text)
 
+    for token in nlp(text):
+        print(token, token.pos_, token.dep_)
     
     # text = vr.stopWordRemoval(text)
     # print("Filtered: ", text)
@@ -23,17 +25,13 @@ def ContentExtractor(text):
 
     pairs = {}
 
-    for t in doc:
-        print(t.pos_)
-
-
     for sent in doc.sents:
         print("Current: ",sent.text)
         root = vr.getRoot(nlp, sent)
-        objects = vr.identifyNoun(nlp, sent.text.lower())
+        direct_object = vr.identifySubject(nlp, sent.text.lower())
 
         print("Noun Extracted")
-        print(set(objects))
+        print(set(direct_object))
 
         actions = vr.identifyVerb(nlp, sent.text.lower())
         
@@ -43,10 +41,14 @@ def ContentExtractor(text):
         else:
             print("No action identified")
 
+        tools = vr.identifyTools(nlp, sent.text.lower())
+        print("Tools Extracted")
+        print(tools)
 
+        
 
-        if len(objects) >0:
-            pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, objects, actions) 
+        if len(direct_object) >0:
+            pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, direct_object, actions, tools) 
 
         # for token in sent:
         #     if token.text in objects and token.head == root:
