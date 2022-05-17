@@ -2,26 +2,32 @@ import spacy
 import VoiceRecognitionUtils as vr
 import sqlite3
 
-con = sqlite3.connect("escaperoom.db")
-
-
-    
-
-
 def ContentExtractor(text):
     nlp = spacy.load("en_core_web_sm")
+    
+    if text != "":
+        f = open("room_generator_log.txt", "a")
+        f.write(text+".\n")
+        f.close()
+    
+    with open("room_generator_log.txt", "r") as f:
+        log = f.read()
 
     # Coreference resolution
-    text = vr.coreferenceResolution(nlp, text)
-    # print("Resolved text: ", text)
+    resolved_text = vr.coreferenceResolution(nlp, log, max_dist=1)
 
-    for token in nlp(text):
-        print(token, token.pos_, token.dep_)
+    print("Resolved text: ", resolved_text)
+    
+    current_resolved_text = resolved_text.split("\n")[-2]
+    
+
+    # for token in nlp(text):
+    #     print(token, token.pos_, token.dep_)
     
     # text = vr.stopWordRemoval(text)
     # print("Filtered: ", text)
 
-    doc = nlp(text)
+    doc = nlp(current_resolved_text)
 
     pairs = {}
 
@@ -45,14 +51,9 @@ def ContentExtractor(text):
         print("Tools Extracted")
         print(tools)
 
-        
-
         if len(direct_object) >0:
             pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, direct_object, actions, tools) 
 
-        # for token in sent:
-        #     if token.text in objects and token.head == root:
-        #         print(token.text, token.dep_, token.head.text)
         print("\n")
     return pairs
 

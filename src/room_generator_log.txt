@@ -1,0 +1,12 @@
+There is a box in the room..
+the box is locked..
+.
+.
+there is a box in the room.
+there is a box in the room..
+There is a box in the room..
+it is locked..
+.
+There is a box in the room..
+the box is locked..
+unlock it with a key.

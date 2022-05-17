@@ -1,5 +1,0 @@
-open the door.
-.
-pick up the key and open the door.
-nihao.
-.

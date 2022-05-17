@@ -26,15 +26,12 @@ def getItemDef(nlp, object):
     else:  
         print("Searching for hypernym")
         for ss in wn.synsets(object, pos=wn.NOUN):
-            print(ss.name())
             for s in ss.closure(lambda s:s.hypernyms()):
-                print(s.lemma_names())
                 if "physical_object" in s.lemma_names():
                     item_def = ss.name()
                     break
             else:
                 continue
-        
             break
 
     return object, item_def
@@ -132,7 +129,6 @@ def isEntryCompleted(cur, item, type):
             required_item = t
             unlock_action = a[0]
 
-        
         if unlock_msg == None:
             user_input = input("What do you want to say to them after unlocking the item?")
             unlock_msg = user_input
@@ -167,15 +163,26 @@ def createRoomDatabase():
 
     return con, cur
 
+
+
+
+
 con, cur = createRoomDatabase()
 
 print("DATABASE CREATED SUCCESSFULLY")
 
+file = open("sample.txt","r+")
+file.truncate(0)
+file.close()
+
+f = open("room_generator_log.txt", "a")
 nlp = spacy.load('en_core_web_sm')
 
 
 
 user_input = input("Tell me about the room:")
+
+
 # user_input=("The box is locked with the password 1234.")
 
 
@@ -184,7 +191,7 @@ for token in nlp(user_input):
 
 
 pairs_queue = deque((te.ContentExtractor(user_input)).items())
-print(pairs_queue)
+
 finished = False
 while(not finished):
     if len(pairs_queue)>0:
@@ -207,3 +214,5 @@ while(not finished):
             user_input = input("What else do you want to add? ")
             newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
             pairs_queue.extendleft(newpairs)
+
+f.close()

@@ -163,9 +163,6 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
         print(token.text,token.dep_, token.head.head.lemma_)
 
         if str(token) in nouns:
-            # if str(n).lower() == token.lemma_:
-            # direct_object = token.lemma_
-            # matches[direct_object] = (action, tools)
             matches[token.lemma_] = ([],"")
             print("matching action ", token.lemma_, token.head.lemma_)
             print(token.head.lemma_, verbs)
