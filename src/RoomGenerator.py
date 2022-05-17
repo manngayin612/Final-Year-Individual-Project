@@ -65,6 +65,9 @@ def createItems(con, cur, object, action, queue):
     combine_with = None
     finished_item = None
 
+    stored_type = itemExisted(cur, item)
+    print("Stored: ", stored_type)
+
     if "unlock" in action or "lock" in action:
         print("Creating Unlock Item")
         # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
@@ -82,30 +85,36 @@ def createItems(con, cur, object, action, queue):
         # item = Item(item, item_def, description = description)
         type = "normal"
 
-    stored_type = itemExisted(cur, item)
-    print("Stored: ", stored_type)
+
 
     #item didnt existed at all
     description = ""
+
     if not stored_type:
         # Giving Description to the object
         description = input("Short description for {}: ".format(object))
 
         insert_object = """INSERT INTO room (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)"""
-        cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))
+        cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
+        print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
     elif stored_type != type:
         print("Please update")
-        update_record = """UPDATE room SET type = ? WHERE item = ?"""
+        update_record = """UPDATE room SET type = ? WHERE item = ?""" 
+        print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
         cur.execute(update_record, (type, item,))
+    else:
+        print("got this already")
+    
+
     
 
     print("Check if all fields are completed.")
     isEntryCompleted(cur,item, type)
         
-    
-    print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
+
     con.commit()
     queue.popleft()
+    print("Created item: ", queue, "\n")
     return description, queue
 # else:
 #     queue.popleft()
@@ -133,8 +142,8 @@ def isEntryCompleted(cur, item, type):
             user_input = input("What do you want to say to them after unlocking the item?")
             unlock_msg = user_input
 
-        update_query = '''UPDATE room SET required_items =?, unlock_msg =?, unlock_action =?'''
-        cur.execute(update_query, (required_item, unlock_msg, unlock_action,))
+        update_query = '''UPDATE room SET required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''
+        cur.execute(update_query, (required_item, unlock_msg, unlock_action, item))
 
         
 def itemExisted(cur, item_name):
@@ -171,7 +180,7 @@ con, cur = createRoomDatabase()
 
 print("DATABASE CREATED SUCCESSFULLY")
 
-file = open("sample.txt","r+")
+file = open("room_generator_log.txt","r+")
 file.truncate(0)
 file.close()
 
@@ -182,12 +191,8 @@ nlp = spacy.load('en_core_web_sm')
 
 user_input = input("Tell me about the room:")
 
-
-# user_input=("The box is locked with the password 1234.")
-
-
-for token in nlp(user_input):
-    print(token, token.pos_, token.dep_)
+# for token in nlp(user_input):
+#     print(token, token.pos_, token.dep_)
 
 
 pairs_queue = deque((te.ContentExtractor(user_input)).items())

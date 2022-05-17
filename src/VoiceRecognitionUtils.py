@@ -97,17 +97,14 @@ def identifyActionsAndObjects(nlp, speech):
 def identifySubject(nlp, input):
     
     matcher = Matcher(nlp.vocab)
-    # Add match ID "HelloWorld
-    # " with no callback and one pattern
+
     pattern1 = [{"POS": "PROPN"} ]
     pattern2 = [{"POS": "NOUN"},{"POS": "NOUN", "OP":"?"}]
     pattern3 = [{"POS": "NOUN"}, {"LOWER": "of"},{"POS": "DET", "OP":"?"},{"POS":"NOUN"}]
     matcher.add("Noun", [pattern1, pattern2, pattern3])
 
     doc = nlp(input)
-    print("in identify noun", doc)
     matches = matcher(doc)
-    print(matches)
 
     noun_phrases = findLongestSpan(nlp, doc, matches)
     return noun_phrases
@@ -117,11 +114,7 @@ def identifySubject(nlp, input):
 def identifyVerb(nlp, input):
     matcher = Matcher(nlp.vocab)
 
-    #define the pattern 
-
-
     pattern1 = [{"POS":"VERB"}, {"POS":"PART", "OP":"*"}, {"POS":"ADV", "OP":"*"}]
-
     pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, 
 
                 # {"POS": "DET", "OP":"*"},
@@ -133,7 +126,6 @@ def identifyVerb(nlp, input):
     doc = nlp(input)
 
     matches = matcher(doc)
-    print(matches)
     
     if len(matches) > 0:
         verb_phrases = findLongestSpan(nlp, doc, matches)
@@ -160,26 +152,22 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
     temp_tools = []
 
     for token in doc:
-        print(token.text,token.dep_, token.head.head.lemma_)
+        # print(token.text,token.dep_, token.head.head.lemma_)
 
         if str(token) in nouns:
             matches[token.lemma_] = ([],"")
-            print("matching action ", token.lemma_, token.head.lemma_)
-            print(token.head.lemma_, verbs)
+            # print("matching action ", token.lemma_, token.head.lemma_)
+            # print(token.head.lemma_, verbs)
             if token.head.lemma_.lower() in verbs:
                 # action = token.head.lemma_.lower()
                 matches[token.lemma_][0].append(token.head.lemma_.lower())
             if token.dep_ == "pobj":
                 temp_tools.append(token)
-                
-    print(matches)
+
     for t in temp_tools:
         for (i, (a, _)) in matches.items():
             if t.head.head.lemma_.lower() in a:
                 matches[i] = (a, t.lemma_)
-    print(matches)
-
-
 
     return matches
 
