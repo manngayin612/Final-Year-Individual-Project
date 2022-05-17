@@ -156,10 +156,7 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
 
         if str(token) in nouns:
             matches[token.lemma_] = ([],"")
-            # print("matching action ", token.lemma_, token.head.lemma_)
-            # print(token.head.lemma_, verbs)
             if token.head.lemma_.lower() in verbs:
-                # action = token.head.lemma_.lower()
                 matches[token.lemma_][0].append(token.head.lemma_.lower())
             if token.dep_ == "pobj":
                 temp_tools.append(token)

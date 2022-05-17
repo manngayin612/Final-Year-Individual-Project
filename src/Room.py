@@ -4,7 +4,8 @@ from SolvingPath import SolvingPath
 
 class Room:
 
-    def __init__(self, level, bag):
+    def __init__(self, name, level, bag):
+        self.name = name
         self.level = level
         self.bag = bag
         self.title = ""
@@ -26,8 +27,30 @@ class Room:
                 return obj
         return None
 
-    def initialiseRoom(self):
-        pass
+    def addItem(self, item):
+        if item not in self.items_in_room:
+            self.items_in_room.append(item)
+        
+        if item.getName() not in self.currentItems:
+            self.currentItems.append(item.getName())
+
+    def initialiseRoom(self, list_of_items):
+
+        self.bag = []
+        for row in list_of_items:
+            # create the items first
+            (type, item, item_def, actions, description, unlock_msg ,required_items ,unlock_action ,combine_with ,finished_item ) = row
+    
+            if type == "normal":
+                item = Item(item, item_def, actions, description)
+            elif type =="unlock":
+                item = UnlockItem(item, item_def, unlock_msg=unlock_msg, required_items=required_items, actions=actions, unlock_action=unlock_action, description=description)
+            elif type == "combine":
+                item = CombinableItem(item, item_def, combine_with=combine_with, finished_item=finished_item, actions=actions, description=description)
+
+            self.addItem(item)
+        print(self.currentItems)
+        print(self.items_in_room)
 
     def succeedCondition(self):
         pass
@@ -38,6 +61,8 @@ class FirstRoom(Room):
         super().__init__(level, bag)
         self.title = "Welcome to the first room."
         self.description = "You are in an empty room with a little wooden table in the middle of the room. Try to escape."
+
+
 
     def initialiseRoom(self):
         self.bag = []

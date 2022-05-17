@@ -2,14 +2,15 @@ from email.policy import default
 from random import randrange
 from py import process
 import VoiceRecognitionUtils as vr 
-from Item import Item, NumberLock, UnlockItem
-from Room import FirstRoom, SecondRoom
+from Item import CombinableItem, Item, NumberLock, UnlockItem
+from Room import FirstRoom, Room, SecondRoom
 from Input import Input
 
 
 import json
 import time
 
+import sqlite3
 
 from nltk.corpus import wordnet as wn
 import pygame
@@ -39,11 +40,37 @@ font = pygame.font.Font(pygame.font.get_default_font(), 50)
 medium_font = pygame.font.Font(pygame.font.get_default_font(), 30)
 small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
+
+
 def initialiseGame():
     open('user_input_log.txt', 'w').close()
-    firstRoom = FirstRoom(1, [])
-    secondRoom = SecondRoom(2, firstRoom.bag)
-    rooms.extend([firstRoom, secondRoom])
+    con = sqlite3.connect("escaperoom.sqlite")
+    cur = con.cursor()
+
+
+
+    #please create a room description
+
+    select_room = '''SELECT name FROM sqlite_master WHERE type='table';'''
+    result = cur.execute(select_room).fetchall()
+    print("Rooms created: ",result)
+
+    for r in result:
+
+        
+        room = Room(r[0], 1, [])
+        select_all = '''SELECT * FROM {} ;'''.format(room.name)
+        result = cur.execute(select_all).fetchall()
+        room.initialiseRoom(result)
+        rooms.append(room)
+    print(rooms)
+
+
+
+    # firstRoom = FirstRoom(1, [])
+    # secondRoom = SecondRoom(2, firstRoom.bag)
+    # rooms.extend([firstRoom, secondRoom])
+
 
 
 def identifyObject(room, item):
@@ -236,7 +263,12 @@ def playLevel(room):
     clock = pygame.time.Clock()
 
     # Initilise the room with objects
-    room.initialiseRoom()
+    con = sqlite3.connect("escaperoom.sqlite")
+    cur = con.cursor()
+    select_all = '''SELECT * FROM {} ;'''.format(room.name)
+    result = cur.execute(select_all).fetchall()
+    room.initialiseRoom(result)
+    
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
     while not room.succeedCondition():
         screen.fill((0,0,0))
@@ -318,8 +350,10 @@ if __name__ == "__main__":
 
         # print([str(hypernyms.name().split(".")[0]) for hypernyms in wn.synsets("pick").hypernyms()])
 
-        print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
-        print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
+        # print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
+        # print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
+
+        initialiseGame()
 
     
         
