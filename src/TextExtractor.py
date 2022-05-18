@@ -17,8 +17,8 @@ def ContentExtractor(text):
         # Coreference resolution
         resolved_text = vr.coreferenceResolution(nlp, log, max_dist=1)
         
-        current_resolved_text = resolved_text.split("\n")[-2]
-        
+        # current_resolved_text = resolved_text.split("\n")[-2]
+        current_resolved_text = text
 
         # for token in nlp(text):
         #     print(token, token.pos_, token.dep_)
@@ -29,30 +29,30 @@ def ContentExtractor(text):
         doc = nlp(current_resolved_text)
 
 
-        for sent in doc.sents:
-            print("Current: ",sent.text)
-            root = vr.getRoot(nlp, sent)
-            direct_object = vr.identifySubject(nlp, sent.text.lower())
+        # for sent in doc.sents:
+        print("Current: ",doc.text)
+        # root = vr.getRoot(nlp, sent)
+        direct_object = vr.identifySubject(nlp, doc.text.lower())
 
-            print("Noun Extracted")
-            print(set(direct_object), "\n")
+        print("Noun Extracted")
+        print(set(direct_object), "\n")
 
-            actions = vr.identifyVerb(nlp, sent.text.lower())
-            
-            print("Verbs Extracted")
-            if len(actions) >0:
-                print(set(actions), "\n")
-            else:
-                print("No action identified\n")
+        actions = vr.identifyVerb(nlp, doc.text.lower())
+        
+        print("Verbs Extracted")
+        if len(actions) >0:
+            print(set(actions), "\n")
+        else:
+            print("No action identified\n")
 
-            tools = vr.identifyTools(nlp, sent.text.lower())
-            print("Tools Extracted")
-            print(tools, "\n")
+        tools = vr.identifyTools(nlp, doc.text.lower())
+        print("Tools Extracted")
+        print(tools, "\n")
 
-            if len(direct_object) >0:
-                pairs = vr.matchObjectWithAction(pairs, nlp, sent.text, direct_object, actions, tools) 
+        if len(direct_object) >0:
+            pairs = vr.matchObjectWithAction(pairs, nlp, doc.text, direct_object, actions, tools) 
 
-            print("\n")
+        print("\n")
     return pairs
 
 
