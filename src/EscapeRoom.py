@@ -47,8 +47,6 @@ def initialiseGame():
     con = sqlite3.connect("escaperoom.sqlite")
     cur = con.cursor()
 
-
-
     #please create a room description
 
     select_room = '''SELECT name FROM sqlite_master WHERE type='table';'''
@@ -56,8 +54,6 @@ def initialiseGame():
     print("Rooms created: ",result)
 
     for r in result:
-
-        
         room = Room(r[0], 1, [])
         select_all = '''SELECT * FROM {} ;'''.format(room.name)
         result = cur.execute(select_all).fetchall()
@@ -247,7 +243,7 @@ def endingScreen(room):
 # Content of the first room
 def playLevel(room):
     # Title of the room
-    title_text = font.render(room.title, True, (255,255,255))
+    title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, (255,255,255))
 
     # Description of the room
     description = small_font.render(room.description, True, (255,255,255))
@@ -265,10 +261,11 @@ def playLevel(room):
     # Initilise the room with objects
     con = sqlite3.connect("escaperoom.sqlite")
     cur = con.cursor()
+    
     select_all = '''SELECT * FROM {} ;'''.format(room.name)
     result = cur.execute(select_all).fetchall()
     room.initialiseRoom(result)
-    
+
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
     while not room.succeedCondition():
         screen.fill((0,0,0))

@@ -1,5 +1,5 @@
-there is a table in the middle of the room..
-there is a key on it.
-the key is to unlock the door..
-unlock it with a key..
+There is a table in the room..
+There is a key on the table..
+The key is used to unlock the door..
 the door is locked..
+unlock it with a key.

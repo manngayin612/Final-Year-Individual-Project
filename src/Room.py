@@ -37,6 +37,8 @@ class Room:
     def initialiseRoom(self, list_of_items):
 
         self.bag = []
+        room_details = list_of_items.pop(0)
+        self.description = room_details[4]
         for row in list_of_items:
             # create the items first
             (type, item, item_def, actions, description, unlock_msg ,required_items ,unlock_action ,combine_with ,finished_item ) = row

@@ -38,7 +38,7 @@ def getItemDef(nlp, object):
 
 
 
-def createItems(con, cur, object, action, queue):
+def createItems(con, cur, room_name, object, action, queue):
 
     nlp = spacy.load('en_core_web_sm')
     nlp.add_pipe(WordnetAnnotator(nlp.lang), after='tagger')
@@ -65,7 +65,7 @@ def createItems(con, cur, object, action, queue):
     combine_with = None
     finished_item = None
 
-    stored_type = itemExisted(cur, item)
+    stored_type = itemExisted(cur, room_name,  item)
     print("Stored: ", stored_type)
 
     if "unlock" in action or "lock" in action:
@@ -94,12 +94,12 @@ def createItems(con, cur, object, action, queue):
         # Giving Description to the object
         description = input("Short description for {}: ".format(object))
 
-        insert_object = """INSERT INTO room (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)"""
+        insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
         cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
         print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
     elif stored_type != type:
         print("Please update")
-        update_record = """UPDATE room SET type = ? WHERE item = ?""" 
+        update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
         print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
         cur.execute(update_record, (type, item,))
     else:
@@ -109,7 +109,7 @@ def createItems(con, cur, object, action, queue):
     
 
     print("Check if all fields are completed.")
-    isEntryCompleted(cur,item, type)
+    isEntryCompleted(cur,room_name, item, type)
         
 
     con.commit()
@@ -121,9 +121,9 @@ def createItems(con, cur, object, action, queue):
 #     return "", queue
 
 
-def isEntryCompleted(cur, item, type):
+def isEntryCompleted(cur, room_name, item, type):
     if type == "unlock":
-        get_record = """SELECT required_items, unlock_msg, unlock_action FROM room WHERE item=? and type = ?;"""
+        get_record = """SELECT required_items, unlock_msg, unlock_action FROM {} WHERE item=? and type = ?;""".format(room_name)
         result = cur.execute(get_record, (item,type,))
         row = result.fetchone()
 
@@ -142,22 +142,22 @@ def isEntryCompleted(cur, item, type):
             user_input = input("What do you want to say to them after unlocking the item?")
             unlock_msg = user_input
 
-        update_query = '''UPDATE room SET required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''
+        update_query = '''UPDATE {} SET required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
         cur.execute(update_query, (required_item, unlock_msg, unlock_action, item))
 
         
-def itemExisted(cur, item_name):
-    check_exist = """SELECT type FROM room WHERE item=?;"""
+def itemExisted(cur, room_name, item_name):
+    check_exist = """SELECT type FROM {} WHERE item=?;""".format(room_name)
     result = cur.execute(check_exist, (item_name,))
     for row in result:
         return row[0]
 
-def createRoomDatabase():
+def createRoomDatabase(name):
     con = sqlite3.connect("escaperoom.sqlite")
     cur = con.cursor()
 
-    cur.execute('''DROP TABLE IF EXISTS room;''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS room(
+    cur.execute('''DROP TABLE IF EXISTS {};'''.format(name))
+    cur.execute('''CREATE TABLE IF NOT EXISTS {}(
         type text,
         item text, 
         item_def text,
@@ -168,7 +168,7 @@ def createRoomDatabase():
         unlock_action text,
         combine_with text, 
         finished_item text
-        )''')
+        )'''.format(name))
 
     return con, cur
 
@@ -176,9 +176,7 @@ def createRoomDatabase():
 
 
 
-con, cur = createRoomDatabase()
 
-print("DATABASE CREATED SUCCESSFULLY")
 
 file = open("room_generator_log.txt","r+")
 file.truncate(0)
@@ -188,11 +186,16 @@ f = open("room_generator_log.txt", "a")
 nlp = spacy.load('en_core_web_sm')
 
 
+name_of_room = input("What do you want to call your room?").replace(" ", "_")
+con, cur = createRoomDatabase(name_of_room)
+print("DATABASE CREATED SUCCESSFULLY")
+
 
 user_input = input("Tell me about the room:")
 
-# for token in nlp(user_input):
-#     print(token, token.pos_, token.dep_)
+
+room_description = cur.execute('''INSERT INTO {} (item, description) VALUES ("room", ?)'''.format(name_of_room),(user_input,))
+
 
 
 pairs_queue = deque((te.ContentExtractor(user_input)).items())
@@ -202,7 +205,7 @@ while(not finished):
     if len(pairs_queue)>0:
         (o,(a,t)) = pairs_queue[0]
         # print("Before creating Items:", pairs_queue)
-        description_of_item, pairs_queue = createItems(con, cur, o, a, pairs_queue)
+        description_of_item, pairs_queue = createItems(con, cur, name_of_room, o, a, pairs_queue)
         # print("After creating items", pairs_queue)
         # f.write(description_of_item+".\n")
     
