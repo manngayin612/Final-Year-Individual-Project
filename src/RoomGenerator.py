@@ -56,8 +56,13 @@ def createItems(con, cur, room_name, object, action, queue):
     else:
         print("createItem ==> SEARCHING DOMAIN")
         item, item_def = getItemDef(nlp, object)
+
+    description = ""
     
-    if item_def != "": #ignore if the item is not a physical object
+    user_input = input("Is \"{}\" something you want to add into the room?".format(item))
+
+
+    if item_def != "" and user_input == "yes": #ignore if the item is not a physical object
         print(item_def, wn.synset(item_def).definition())
 
         unlock_msg = None
@@ -94,7 +99,7 @@ def createItems(con, cur, room_name, object, action, queue):
         # new_pairs = te.ContentExtractor(more_info)
 
 
-        description = ""
+        
 
         #item didnt existed at all
         if not stored_type:
