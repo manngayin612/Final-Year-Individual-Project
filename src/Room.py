@@ -31,7 +31,7 @@ class Room:
         if item not in self.items_in_room:
             self.items_in_room.append(item)
         
-        if item.getName() not in self.currentItems:
+        if item.getName() not in self.currentItems and item.enabled:
             self.currentItems.append(item.getName())
 
     def initialiseRoom(self, list_of_items):

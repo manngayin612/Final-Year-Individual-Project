@@ -85,11 +85,9 @@ def createItems(con, cur, room_name, object, action, queue):
         # item = Item(item, item_def, description = description)
         type = "normal"
 
-
-
-    #item didnt existed at all
     description = ""
 
+    #item didnt existed at all
     if not stored_type:
         # Giving Description to the object
         description = input("Short description for {}: ".format(object))
@@ -97,7 +95,7 @@ def createItems(con, cur, room_name, object, action, queue):
         insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
         cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
         print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
-    elif stored_type != type:
+    elif stored_type != type: #was initialised as normal item but its an unlock item
         print("Please update")
         update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
         print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
@@ -106,11 +104,12 @@ def createItems(con, cur, room_name, object, action, queue):
         print("got this already")
     
 
-    
 
     print("Check if all fields are completed.")
-    isEntryCompleted(cur,room_name, item, type)
-        
+    new_pairs = isEntryCompleted(cur,room_name, item, type)
+    if new_pairs:
+        queue.extend(new_pairs.items())
+    print(queue)
 
     con.commit()
     queue.popleft()
@@ -122,6 +121,7 @@ def createItems(con, cur, room_name, object, action, queue):
 
 
 def isEntryCompleted(cur, room_name, item, type):
+    pair = {}
     if type == "unlock":
         get_record = """SELECT required_items, unlock_msg, unlock_action FROM {} WHERE item=? and type = ?;""".format(room_name)
         result = cur.execute(get_record, (item,type,))
@@ -137,13 +137,22 @@ def isEntryCompleted(cur, room_name, item, type):
             (a,t) = pair[item] 
             required_item = t
             unlock_action = a[0]
+            print(pair)
+
 
         if unlock_msg == None:
             user_input = input("What do you want to say to them after unlocking the item?")
             unlock_msg = user_input
+            escaped_prob = vr.sentenceSimilarity(unlock_msg, "You escaped.")
+            print(escaped_prob)
+            if escaped_prob > 0.7:
+                print("{} is the escape item".format(item))
+                update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
+                cur.execute(update_query, (item,))
 
         update_query = '''UPDATE {} SET required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
         cur.execute(update_query, (required_item, unlock_msg, unlock_action, item))
+        return pair
 
         
 def itemExisted(cur, room_name, item_name):

@@ -1,5 +1,4 @@
-There is a table in the room..
-There is a key on the table..
-The key is used to unlock the door..
-the door is locked..
+There is a door in the room..
+The door is locked..
 unlock it with a key.
+There is nothing about the key..

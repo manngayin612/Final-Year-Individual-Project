@@ -111,6 +111,7 @@ class CombinableItem(Item):
         super().__init__(name, item_def, actions, description)
         self.finished_item = finished_item
         self.combine_with = combine_with
+        
 
     def combineWith(self, room, component):
         if component.getName() == self.combine_with:

@@ -17,7 +17,7 @@ import pygame
 import sys
 
 voice_input = False
-test = False
+test = True
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -243,6 +243,7 @@ def endingScreen(room):
 # Content of the first room
 def playLevel(room):
     # Title of the room
+
     title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, (255,255,255))
 
     # Description of the room
@@ -315,6 +316,7 @@ def playLevel(room):
     endingScreen(room)
         
 
+import spacy
 
 if __name__ == "__main__":
     if not test:
@@ -349,11 +351,4 @@ if __name__ == "__main__":
 
         # print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
         # print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
-
         initialiseGame()
-
-    
-        
-
-            
-

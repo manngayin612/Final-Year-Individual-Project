@@ -9,6 +9,7 @@ from Input import Input
 import ChatGenerator 
 from random import randrange
 import VoiceRecognitionUtils as vr
+from sentence_transformers import SentenceTransformer, util
 
 # from spacy import displacy
 
@@ -222,6 +223,15 @@ def findLongestSpan(nlp, doc, matches):
         #     print(start, end, getSpanText(doc, start,end))
 
     return new_matches
+
+def sentenceSimilarity(sent1, sent2):
+    sentences = [sent1, sent2]
+    model = SentenceTransformer('distilbert-base-nli-mean-tokens')
+    # sentences = ['you escaped', 'where is the key', 'there is a key inside', 'bye', 'you are free now', 'there is a new room waiting for you']
+    sentence_embeddings = model.encode(sentences)
+    similarity = util.pytorch_cos_sim(sentence_embeddings[0], sentence_embeddings[1])
+    print(similarity)
+    return similarity
 
 
 def stopWordRemoval(input):
