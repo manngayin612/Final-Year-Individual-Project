@@ -1,4 +1,1 @@
-There is a door in the room..
-The door is locked..
-unlock it with a key.
-There is nothing about the key..
+There is a box.

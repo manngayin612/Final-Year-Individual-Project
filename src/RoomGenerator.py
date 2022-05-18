@@ -85,6 +85,13 @@ def createItems(con, cur, room_name, object, action, queue):
         # item = Item(item, item_def, description = description)
         type = "normal"
 
+    action_query = """SELECT action FROM {} WHERE item = ?""".format(room_name)
+    stored_action = cur.execute(action_query, (object,)).fetchone()
+    print(stored_action)
+    # more_info = input("Do you have anymore information to add? ")
+    # new_pairs = te.ContentExtractor(more_info)
+
+
     description = ""
 
     #item didnt existed at all
@@ -102,7 +109,6 @@ def createItems(con, cur, room_name, object, action, queue):
         cur.execute(update_record, (type, item,))
     else:
         print("got this already")
-    
 
 
     print("Check if all fields are completed.")
