@@ -13,6 +13,7 @@ import VoiceRecognitionUtils as vr
 
 def getItemDef(nlp, object):
     token = nlp(object)[0]
+    item_def = ""
 
     domain = ["furniture", "home"]
 
@@ -55,69 +56,71 @@ def createItems(con, cur, room_name, object, action, queue):
     else:
         print("createItem ==> SEARCHING DOMAIN")
         item, item_def = getItemDef(nlp, object)
-        
-    print(item_def, wn.synset(item_def).definition())
+    
+    if item_def != "": #ignore if the item is not a physical object
+        print(item_def, wn.synset(item_def).definition())
 
-    unlock_msg = None
-    required_item = None
-    unlock_action = None
+        unlock_msg = None
+        required_item = None
+        unlock_action = None
 
-    combine_with = None
-    finished_item = None
+        combine_with = None
+        finished_item = None
 
-    stored_type = itemExisted(cur, room_name,  item)
-    print("Stored: ", stored_type)
+        stored_type = itemExisted(cur, room_name,  item)
+        print("Stored: ", stored_type)
 
-    if "unlock" in action or "lock" in action:
-        print("Creating Unlock Item")
-        # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
-        #Store it into SQL
-        type = "unlock"
-        #TODO: Special case of a numberlock
+        if "unlock" in action or "lock" in action:
+            print("Creating Unlock Item")
+            # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
+            #Store it into SQL
+            type = "unlock"
+            #TODO: Special case of a numberlock
 
-    elif "combine" in action:
-        print("Creating Combinable Item")
-        # item = CombinableItem(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description="")
-        type = "combine"
+        elif "combine" in action:
+            print("Creating Combinable Item")
+            # item = CombinableItem(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description="")
+            type = "combine"
 
-    else:
-        print("Creating Normal Item")
-        # item = Item(item, item_def, description = description)
-        type = "normal"
+        else:
+            print("Creating Normal Item")
+            # item = Item(item, item_def, description = description)
+            type = "normal"
 
-    action_query = """SELECT action FROM {} WHERE item = ?""".format(room_name)
-    stored_action = cur.execute(action_query, (object,)).fetchone()
-    print(stored_action)
-    # more_info = input("Do you have anymore information to add? ")
-    # new_pairs = te.ContentExtractor(more_info)
-
-
-    description = ""
-
-    #item didnt existed at all
-    if not stored_type:
-        # Giving Description to the object
-        description = input("Short description for {}: ".format(object))
-
-        insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
-        cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
-        print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
-    elif stored_type != type: #was initialised as normal item but its an unlock item
-        print("Please update")
-        update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
-        print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
-        cur.execute(update_record, (type, item,))
-    else:
-        print("got this already")
+        action_query = """SELECT action FROM {} WHERE item = ?""".format(room_name)
+        stored_action = cur.execute(action_query, (object,)).fetchone()
+        print(stored_action)
+        # more_info = input("Do you have anymore information to add? ")
+        # new_pairs = te.ContentExtractor(more_info)
 
 
-    print("Check if all fields are completed.")
-    new_pairs = isEntryCompleted(cur,room_name, item, type)
-    if new_pairs:
-        queue.extend(new_pairs.items())
-    print(queue)
+        description = ""
 
-    con.commit()
+        #item didnt existed at all
+        if not stored_type:
+            # Giving Description to the object
+            description = input("Short description for {}: ".format(object))
+
+            insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
+            cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
+            print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
+        elif stored_type != type: #was initialised as normal item but its an unlock item
+            print("Please update")
+            update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
+            print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
+            cur.execute(update_record, (type, item,))
+        else:
+            print("got this already")
+
+
+        print("Check if all fields are completed.")
+        new_pairs = isEntryCompleted(cur,room_name, item, type)
+        if new_pairs:
+            queue.extend(new_pairs.items())
+        print(queue)
+
+        con.commit()
+    
     queue.popleft()
     print("Created item: ", queue, "\n")
     return description, queue
