@@ -1,4 +1,4 @@
-there is a chair.
-nothing.
-a door.
-the door is locked..
+There is door in the room.
+The door is locked..
+unlock it with a key.
+it is golden.

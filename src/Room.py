@@ -14,6 +14,7 @@ class Room:
         self.currentItems = []
         self.bag = []
         self.success = False
+        self.succeed_item = ""
         # self.starting_items = []
 
     # Check if have item in bag
@@ -38,11 +39,12 @@ class Room:
 
         self.bag = []
         room_details = list_of_items.pop(0)
+        self.succeed_item = room_details[6]
         self.description = room_details[4]
         for row in list_of_items:
             # create the items first
             (type, item, item_def, actions, description, unlock_msg ,required_items ,unlock_action ,combine_with ,finished_item ) = row
-    
+            print("Initialising room:, ", actions)
             if type == "normal":
                 item = Item(item, item_def, actions, description)
             elif type =="unlock":
@@ -55,7 +57,9 @@ class Room:
         print(self.items_in_room)
 
     def succeedCondition(self):
-        pass
+        self.success = self.getItem(self.succeed_item).success
+        return self.success        
+
 
 class FirstRoom(Room):
 

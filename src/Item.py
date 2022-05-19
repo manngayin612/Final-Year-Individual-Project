@@ -6,26 +6,27 @@ import VoiceRecognitionUtils as vr
 class Item:
 
     def __init__(self, name, item_def, actions=[], description="blablabla"):
-        self.__name = name
-        self.__item_def = item_def
-        self.__actions = ["investigate"]
-        self.__actions.extend(actions)
+        self.name = name
+        self.item_def = item_def
+        self.actions = ["investigate", "get"]
+        if actions:
+            self.actions.extend(actions)
         self.success = False
-        self.__description = description
+        self.description = description
         
     def getItemDef(self):
-        return self.__item_def
+        return self.item_def
 
 
     def getActions(self):
-        return self.__actions
+        return self.actions
 
     def getName(self):
-        return self.__name
+        return self.name
 
     
     def getDescription(self):
-        return self.__description
+        return self.description
 
     def performAction(self, room,input):
         msg = ""
@@ -54,6 +55,7 @@ class Item:
 class UnlockItem(Item):
     def __init__(self, name, item_def, unlock_msg, required_items="", actions=["unlock"], unlock_action = "unlock", description="Exit Item"):
         super().__init__(name, item_def, actions, description=description)
+        self.actions.append("unlock")
         self.required_items = required_items
         self.unlock_message = unlock_msg
         self.unlock_action = unlock_action

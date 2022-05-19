@@ -115,7 +115,11 @@ def createItems(con, cur, room_name, object, action, queue):
                 description = input("Short description for {}: ".format(object))
 
                 insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
-                cur.execute(insert_object, (type, item, item_def, str(a), description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
+                if action == []: 
+                    a = None
+                else:
+                    a = str(action)
+                cur.execute(insert_object, (type, item, item_def, a, description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
                 print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
             elif stored_type != type: #was initialised as normal item but its an unlock item
                 print("Please update")
