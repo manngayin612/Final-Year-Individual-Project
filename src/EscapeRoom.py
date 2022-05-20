@@ -70,6 +70,9 @@ def initialiseGame():
 
 
 def identifyObject(room, item):
+    if item == "":
+        item = input("What object are you interracting with?")
+
     #Check cache first=
     objectFromCache = searchCache(item)
     if objectFromCache != "":
@@ -104,6 +107,9 @@ def identifyObject(room, item):
 
 def identifyAction(action, item):
     # Check in Cache
+    if action == "":
+        action = input("Which action do you want to perform? {}".format(item.getActions()))
+
     actionFromCache = searchCache(action)
     print(actionFromCache)
     if actionFromCache != "":
@@ -142,18 +148,17 @@ def processAction(room, processed_input):
     # for (action, direct_object, pw) in actions_dobjects_pw:
     start = time.process_time()
     processed_input.item = identifyObject(room, processed_input.item)
+
+
     
     print("Processed_input item in processAction()", processed_input.item.getActions())
     if processed_input.tool != "":
         processed_input.tool = identifyObject(room, processed_input.tool)
         print("Processed_input tools ", processed_input.tool.getName())
 
-    if type(processed_input.item) == str:
-        #TODO
-        print("Lets check the next one.")
-    else:
-        processed_input.action = identifyAction(processed_input.action, processed_input.item)
-        print(processed_input.action)
+
+    processed_input.action = identifyAction(processed_input.action, processed_input.item)
+    print(processed_input.action)
 
     return processed_input.item.performAction(room, processed_input)
 
@@ -268,7 +273,7 @@ def playLevel(room):
     room.initialiseRoom(result)
 
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
-    while not room.succeedCondition():
+    while not room.success:
         screen.fill((0,0,0))
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
         screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))

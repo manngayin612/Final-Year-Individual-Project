@@ -97,7 +97,8 @@ class NumberLock(UnlockItem):
             msg += self.getDescription()
         elif input.action == "unlock":
             if input.password == "":
-                msg+= "Do you know the password for the {}?".format(self.getName())
+                msg+= "Do you know the password for the {}? Try again with the password".format(self.getName())
+
             else:  
                 if self.unlockNumberLock(input.password):
                     msg += self.unlock_message

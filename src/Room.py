@@ -49,6 +49,8 @@ class Room:
                 item = Item(item, item_def, actions, description)
             elif type =="unlock":
                 item = UnlockItem(item, item_def, unlock_msg=unlock_msg, required_items=required_items, actions=actions, unlock_action=unlock_action, description=description)
+            elif type =="numberlock":
+                item = NumberLock(item, required_items, item_def, actions=actions, description=description, unlock_msg=unlock_msg)
             elif type == "combine":
                 item = CombinableItem(item, item_def, combine_with=combine_with, finished_item=finished_item, actions=actions, description=description)
 
@@ -58,6 +60,7 @@ class Room:
 
     def succeedCondition(self):
         self.success = self.getItem(self.succeed_item).success
+        print(self.success)
         return self.success        
 
 

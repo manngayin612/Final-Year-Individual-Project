@@ -5,11 +5,15 @@ import neuralcoref
 from spacy.matcher import Matcher
 # import neuralcoref
 import speech_recognition as sr
+from sympy import hyper
 from Input import Input
 import ChatGenerator 
 from random import randrange
 import VoiceRecognitionUtils as vr
 from sentence_transformers import SentenceTransformer, util
+
+
+from nltk.corpus import wordnet as wn
 
 # from spacy import displacy
 
@@ -280,6 +284,12 @@ def processSpeech(input):
  
 
     return inputs
+
+def isSimilarWord(stored_word, input_word):
+    synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.VERB)])
+    hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.VERB) for h in ss.hypernyms()])
+    print(synonyms, hypernyms)
+    return input_word in synonyms or input_word in hypernyms
 
     
 # def getSynsetsList(word):

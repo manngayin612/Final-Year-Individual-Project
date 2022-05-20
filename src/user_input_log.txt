@@ -1,2 +1,2 @@
-take the key.
 unlock the door.
+unlock the door with 1234.

@@ -1,4 +1,6 @@
 import sqlite3
+
+from setuptools import Require
 import TextExtractor as te
 import spacy
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
@@ -158,11 +160,20 @@ def isEntryCompleted(cur, room_name, item, type):
         unlock_action = row[2]
 
         if required_item == None:
-            user_input = input("How do you unlock this item?")
-            pair = te.ContentExtractor(user_input)
-            (a,t) = pair[item] 
-            required_item = t
-            unlock_action = a[0]
+
+            user_input = input("Do you unlock it with a password?")
+            if vr.sentenceSimilarity("no", user_input) > 0.9:
+                user_input = input("How do you unlock this item?")
+                pair = te.ContentExtractor(user_input)
+                (a,t) = pair[item] 
+                required_item = t
+
+                unlock_action = a[0]
+            else:
+                user_input = input("What is the password for the lock?")
+                required_item = user_input
+                type = "numberlock"
+                print(required_item)
             print(pair)
 
 
@@ -176,8 +187,8 @@ def isEntryCompleted(cur, room_name, item, type):
                 update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
                 cur.execute(update_query, (item,))
 
-        update_query = '''UPDATE {} SET required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
-        cur.execute(update_query, (required_item, unlock_msg, unlock_action, item))
+        update_query = '''UPDATE {} SET type = ?, required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
+        cur.execute(update_query, (type, required_item, unlock_msg, unlock_action, item))
         return pair
 
         
@@ -211,8 +222,7 @@ def createRoomDatabase(name):
 
 
 
-
-
+            
 file = open("room_generator_log.txt","r+")
 file.truncate(0)
 file.close()
@@ -237,6 +247,8 @@ pairs_queue = deque((te.ContentExtractor(user_input)).items())
 print(pairs_queue)
 
 finished = False
+
+
 while(not finished):
     if len(pairs_queue)>0:
         (o,(a,t)) = pairs_queue[0]
@@ -261,3 +273,5 @@ while(not finished):
 
 
 f.close()
+
+
