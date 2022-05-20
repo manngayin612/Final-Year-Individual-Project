@@ -208,15 +208,46 @@ def titleScreen():
 
         # start button
         start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        create = create_button("Create Room", ((screen_width-125)/2), (screen_height+50)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
 
         if start:
             playLevel(rooms[0])
+        
+        if create:
+            createRoom()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
         pygame.display.update()
+
+
+def createRoom():
+    text = font.render("Welcome to the Room Generator!", True, (255, 255,255))
+
+    # Input Rectangle
+    rect_width = screen_width-100
+    rect_height = screen_height/4
+    input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
+
+
+    X = 400
+    Y = 400
+    display_surface = pygame.display.set_mode((X, Y))
+
+    # create a rectangular object for the
+    # text surface object
+    textRect = text.get_rect()
+    
+    # set the center of the rectangular object.
+    textRect.center = (X // 2, Y // 2)
+    while True:
+        display_surface.fill((255,255,255))
+        display_surface.blit(text, textRect)
+
+        for event in pygame.event.get():
+            pygame.display.update()
 
 
 def endingScreen(room):

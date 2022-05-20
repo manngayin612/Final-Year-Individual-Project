@@ -8,6 +8,7 @@ from nltk.corpus import wordnet as wn
 from Item import CombinableItem, Item, UnlockItem
 from collections import deque
 import VoiceRecognitionUtils as vr
+from States import States, StatesDict
 
 
 # Normal items: name, item_def, actions, description
@@ -61,9 +62,6 @@ def createItems(con, cur, room_name, object, action, queue):
 
     description = ""
     
-    
-
-
     if item_def != "" : #ignore if the item is not a physical object
         print(item_def, wn.synset(item_def).definition())
 
@@ -80,7 +78,11 @@ def createItems(con, cur, room_name, object, action, queue):
             prompt = "Is \"{}\" something you want to add into the room?".format(item)
         else:
             prompt = "Is this updates to the \"{}\"?".format(item)
+        StatesDict.states_dict[States.UPDATE_STORED_ITEM] = prompt
+        state = States.UPDATE_STORED_ITEM
+        
         user_input = input(prompt)
+        
         if not (vr.sentenceSimilarity(user_input, "no") > 0.9):
 
             print("Stored: ", stored_type)
@@ -220,9 +222,8 @@ def createRoomDatabase(name):
 
 
 
+state = 0
 
-
-            
 file = open("room_generator_log.txt","r+")
 file.truncate(0)
 file.close()
@@ -232,6 +233,8 @@ nlp = spacy.load('en_core_web_sm')
 
 
 name_of_room = input("What do you want to call your room?").replace(" ", "_")
+
+
 con, cur = createRoomDatabase(name_of_room)
 print("DATABASE CREATED SUCCESSFULLY")
 
