@@ -1,10 +1,12 @@
 from email.policy import default
 from random import randrange
+from platformdirs import user_cache_dir
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem
 from Room import FirstRoom, Room, SecondRoom
 from Input import Input
+import RoomGenerator as rg
 
 
 import json
@@ -224,7 +226,9 @@ def titleScreen():
 
 
 def createRoom():
-    text = font.render("Welcome to the Room Generator!", True, (255, 255,255))
+    state = 1
+
+    title_text = font.render("Welcome to the Room Generator!", True, (0, 255,255))
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -232,22 +236,45 @@ def createRoom():
     input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
 
 
-    X = 400
-    Y = 400
-    display_surface = pygame.display.set_mode((X, Y))
+    file = open("room_generator_log.txt","r+")
+    file.truncate(0)
+    file.close()
 
-    # create a rectangular object for the
-    # text surface object
-    textRect = text.get_rect()
-    
-    # set the center of the rectangular object.
-    textRect.center = (X // 2, Y // 2)
+    f = open("room_generator_log.txt", "a")
+
+    # response = rg.startGenerator(state)
+    # response = font.render(response, True, (255, 255,255))
     while True:
-        display_surface.fill((255,255,255))
-        display_surface.blit(text, textRect)
-
+        screen.fill((0,0,0))
+        screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
+        # screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
+        response = rg.startGenerator(state)
+        user_input = "HIII idk"
         for event in pygame.event.get():
-            pygame.display.update()
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            #TODO: is there a way to switch between voice and keyboard more freely?
+            # if event.type == pygame.MOUSEBUTTONDOWN:
+            #     (mouse_x, mouse_y) = pygame.mouse.get_pos()
+            #     if input_rect.collidepoint(mouse_x, mouse_y):
+            #         user_input = vr.recogniseSpeech()
+            
+
+            #     else:
+            #         user_input +=event.unicode
+        
+        pygame.draw.rect(screen, (255,255,0), input_rect)
+        text_surface = medium_font.render(user_input, True, (255, 0, 255))
+        screen.blit(text_surface,input_rect.topleft)
+
+        
+        response_text = medium_font.render(response, True, (255,0,0))
+        screen.blit(response_text, (100,200))
+
+        pygame.display.flip()
+
 
 
 def endingScreen(room):

@@ -8,7 +8,7 @@ from nltk.corpus import wordnet as wn
 from Item import CombinableItem, Item, UnlockItem
 from collections import deque
 import VoiceRecognitionUtils as vr
-from States import States, StatesDict
+from States import States, states_dict
 
 
 # Normal items: name, item_def, actions, description
@@ -80,7 +80,7 @@ def createItems(con, cur, room_name, object, action, queue):
             prompt = "Is this updates to the \"{}\"?".format(item)
         StatesDict.states_dict[States.UPDATE_STORED_ITEM] = prompt
         state = States.UPDATE_STORED_ITEM
-        
+
         user_input = input(prompt)
         
         if not (vr.sentenceSimilarity(user_input, "no") > 0.9):
@@ -221,60 +221,55 @@ def createRoomDatabase(name):
     return con, cur
 
 
+def startGenerator(state):
+    nlp = spacy.load('en_core_web_sm')
 
-state = 0
-
-file = open("room_generator_log.txt","r+")
-file.truncate(0)
-file.close()
-
-f = open("room_generator_log.txt", "a")
-nlp = spacy.load('en_core_web_sm')
-
-
-name_of_room = input("What do you want to call your room?").replace(" ", "_")
-
-
-con, cur = createRoomDatabase(name_of_room)
-print("DATABASE CREATED SUCCESSFULLY")
-
-
-user_input = input("Tell me about the room:")
-
-
-room_description = cur.execute('''INSERT INTO {} (item, description) VALUES ("room", ?)'''.format(name_of_room),(user_input,))
-
-
-
-pairs_queue = deque((te.ContentExtractor(user_input)).items())
-print(pairs_queue)
-
-finished = False
-
-
-while(not finished):
-    if len(pairs_queue)>0:
-        (o,(a,t)) = pairs_queue[0]
-
-        description_of_item, pairs_queue = createItems(con, cur, name_of_room, o, a, pairs_queue)
+    if state == States.NAME_ROOM.value:
+        print("Please NAme your room")
+        return states_dict[States.NAME_ROOM]
+    name_of_room = input("What do you want to call your room?").replace(" ", "_")
     
-        newpairs = (te.ContentExtractor(description_of_item)).items()
-        pairs_queue.extendleft(newpairs)
-        print(pairs_queue)
-    else:
-        user_input = input("Do you have anything else to add? ")
+
+    con, cur = createRoomDatabase(name_of_room)
+    print("DATABASE CREATED SUCCESSFULLY")
 
 
-        if vr.sentenceSimilarity(user_input, "no") > 0.9:
-            finished = True
-        else:
-            user_input = input("What else do you want to add? ")
-            
-            newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
+    user_input = input("Tell me about the room:")
+
+
+    room_description = cur.execute('''INSERT INTO {} (item, description) VALUES ("room", ?)'''.format(name_of_room),(user_input,))
+
+
+
+    pairs_queue = deque((te.ContentExtractor(user_input)).items())
+    print(pairs_queue)
+
+    finished = False
+
+
+    while(not finished):
+        if len(pairs_queue)>0:
+            (o,(a,t)) = pairs_queue[0]
+
+            description_of_item, pairs_queue = createItems(con, cur, name_of_room, o, a, pairs_queue)
+        
+            newpairs = (te.ContentExtractor(description_of_item)).items()
             pairs_queue.extendleft(newpairs)
             print(pairs_queue)
+        else:
+            user_input = input("Do you have anything else to add? ")
 
 
-f.close()
+            if vr.sentenceSimilarity(user_input, "no") > 0.9:
+                finished = True
+            else:
+                user_input = input("What else do you want to add? ")
+                
+                newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
+                pairs_queue.extendleft(newpairs)
+                print(pairs_queue)
+
+
+    f.close()
 
 
