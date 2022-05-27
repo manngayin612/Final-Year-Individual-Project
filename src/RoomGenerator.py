@@ -42,7 +42,7 @@ def getItemDef(nlp, object):
 
 
 
-def createItems(con, cur, room_name, object, action, queue):
+def createItems(state, con, cur, room_name, object, action, queue):
 
     nlp = spacy.load('en_core_web_sm')
     nlp.add_pipe(WordnetAnnotator(nlp.lang), after='tagger')
@@ -50,65 +50,68 @@ def createItems(con, cur, room_name, object, action, queue):
     # print("Item Existed? ", itemExisted(cur, object, "normal"))
 
     # if not itemExisted(cur, object):
-    print("Creating items with name {} and action {}".format(object, action))
+    if state == States.INPUT_PROCESS.value:
+        print("Creating items with name {} and action {}".format(object, action))
         
-    if  "room" in object:
-        print("createItems: room ==> IGNORE")
-        queue.popleft()
-        return "", queue
-    else:
-        print("createItem ==> SEARCHING DOMAIN")
-        item, item_def = getItemDef(nlp, object)
-
-    description = ""
-    
-    if item_def != "" : #ignore if the item is not a physical object
-        print(item_def, wn.synset(item_def).definition())
-
-        unlock_msg = None
-        required_item = None
-        unlock_action = None
-
-        combine_with = None
-        finished_item = None
-
-
-        stored_type = itemExisted(cur, room_name,  item)
-        if not stored_type:
-            prompt = "Is \"{}\" something you want to add into the room?".format(item)
+        if  "room" in object:
+            print("createItems: room ==> IGNORE")
+            queue.popleft()
+            return "", queue
         else:
-            prompt = "Is this updates to the \"{}\"?".format(item)
-        StatesDict.states_dict[States.UPDATE_STORED_ITEM] = prompt
-        state = States.UPDATE_STORED_ITEM
+            print("createItem ==> SEARCHING DOMAIN")
+            item, item_def = getItemDef(nlp, object)
 
-        user_input = input(prompt)
-        
-        if not (vr.sentenceSimilarity(user_input, "no") > 0.9):
+        description = ""
+    
+        if item_def != "" : #ignore if the item is not a physical object
+            print(item_def, wn.synset(item_def).definition())
 
-            print("Stored: ", stored_type)
+            unlock_msg = None
+            required_item = None
+            unlock_action = None
 
-            if "unlock" in action or "lock" in action:
-                print("Creating Unlock Item")
-                # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
-                #Store it into SQL
-                type = "unlock"
-                #TODO: Special case of a numberlock
+            combine_with = None
+            finished_item = None
 
-            elif "combine" in action:
-                print("Creating Combinable Item")
-                # item = CombinableItem(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description="")
-                type = "combine"
 
+            stored_type = itemExisted(cur, room_name,  item)
+            if not stored_type:
+                prompt = "Is \"{}\" something you want to add into the room?".format(item)
             else:
-                print("Creating Normal Item")
-                # item = Item(item, item_def, description = description)
-                type = "normal"
+                prompt = "Is this updates to the \"{}\"?".format(item)
+            states_dict[States.UPDATE_STORED_ITEM] = prompt
+            new_state = States.UPDATE_STORED_ITEM
+            return new_state, prompt, False 
 
-            action_query = """SELECT action FROM {} WHERE item = ?""".format(room_name)
-            stored_action = cur.execute(action_query, (object,)).fetchone()
-            print(stored_action)
-            # more_info = input("Do you have anymore information to add? ")
-            # new_pairs = te.ContentExtractor(more_info)
+
+        # user_input = input(prompt)
+        if state == States.UPDATE_STORED_ITEM:
+            if not (vr.sentenceSimilarity(user_input, "no") > 0.9):
+
+                print("Stored: ", stored_type)
+
+                if "unlock" in action or "lock" in action:
+                    print("Creating Unlock Item")
+                    # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
+                    #Store it into SQL
+                    type = "unlock"
+                    #TODO: Special case of a numberlock
+
+                elif "combine" in action:
+                    print("Creating Combinable Item")
+                    # item = CombinableItem(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description="")
+                    type = "combine"
+
+                else:
+                    print("Creating Normal Item")
+                    # item = Item(item, item_def, description = description)
+                    type = "normal"
+
+                action_query = """SELECT action FROM {} WHERE item = ?""".format(room_name)
+                stored_action = cur.execute(action_query, (object,)).fetchone()
+                print(stored_action)
+                # more_info = input("Do you have anymore information to add? ")
+                # new_pairs = te.ContentExtractor(more_info)
 
 
             
@@ -220,56 +223,56 @@ def createRoomDatabase(name):
 
     return con, cur
 
-
-def startGenerator(state):
+room_name = ""
+def startGenerator(state, user_input):
+    print(state)
+    finished = False
     nlp = spacy.load('en_core_web_sm')
 
-    if state == States.NAME_ROOM.value:
-        print("Please NAme your room")
-        return states_dict[States.NAME_ROOM]
-    name_of_room = input("What do you want to call your room?").replace(" ", "_")
+    # if state == States.NAME_ROOM.value:
+    #     return states_dict[States.NAME_ROOM], finished
+    # name_of_room = input("What do you want to call your room?").replace(" ", "_")
     
-
-    con, cur = createRoomDatabase(name_of_room)
-    print("DATABASE CREATED SUCCESSFULLY")
-
-
-    user_input = input("Tell me about the room:")
-
-
-    room_description = cur.execute('''INSERT INTO {} (item, description) VALUES ("room", ?)'''.format(name_of_room),(user_input,))
+    if state == States.NAME_ROOM.value:
+        print("Naming the Room")
+        room_name = user_input.replace(" ", "_")
+        con, cur = createRoomDatabase(room_name)
+        print("DATABASE CREATED SUCCESSFULLY")
+        new_state = States(state+1)
+        return new_state, states_dict[new_state], finished
 
 
+    if state == States.OVERALL_DESCRIPTION.value:
+        print("Asking for general description...")
+        cur.execute('''INSERT INTO {} (item, description) VALUES ("room", ?)'''.format(room_name),(user_input,))
 
-    pairs_queue = deque((te.ContentExtractor(user_input)).items())
-    print(pairs_queue)
+        pairs_queue = deque((te.ContentExtractor(user_input)).items())
+        print(pairs_queue)
 
-    finished = False
+        while(not finished):
+            
+            if len(pairs_queue)>0:
+                (o,(a,t)) = pairs_queue[0]
 
-
-    while(not finished):
-        if len(pairs_queue)>0:
-            (o,(a,t)) = pairs_queue[0]
-
-            description_of_item, pairs_queue = createItems(con, cur, name_of_room, o, a, pairs_queue)
-        
-            newpairs = (te.ContentExtractor(description_of_item)).items()
-            pairs_queue.extendleft(newpairs)
-            print(pairs_queue)
-        else:
-            user_input = input("Do you have anything else to add? ")
-
-
-            if vr.sentenceSimilarity(user_input, "no") > 0.9:
-                finished = True
-            else:
-                user_input = input("What else do you want to add? ")
-                
-                newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
+                description_of_item, pairs_queue = createItems(state, con, cur, room_name, o, a, pairs_queue)
+            
+                newpairs = (te.ContentExtractor(description_of_item)).items()
                 pairs_queue.extendleft(newpairs)
-                print(pairs_queue)
+                # print(pairs_queue)
+            else:
+                user_input = input("Do you have anything else to add? ")
 
 
-    f.close()
+                if vr.sentenceSimilarity(user_input, "no") > 0.9:
+                    finished = True
+                else:
+                    user_input = input("What else do you want to add? ")
+                    
+                    newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
+                    pairs_queue.extendleft(newpairs)
+                    print(pairs_queue)
+
+
+        f.close()
 
 

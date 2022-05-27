@@ -7,6 +7,7 @@ from Item import CombinableItem, Item, NumberLock, UnlockItem
 from Room import FirstRoom, Room, SecondRoom
 from Input import Input
 import RoomGenerator as rg
+from States import States, states_dict
 
 
 import json
@@ -19,7 +20,7 @@ import pygame
 import sys
 
 voice_input = False
-test = False
+test = True
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -226,9 +227,8 @@ def titleScreen():
 
 
 def createRoom():
-    state = 1
-
-    title_text = font.render("Welcome to the Room Generator!", True, (0, 255,255))
+    state = States.NAME_ROOM.value
+    title_text = font.render(states_dict[States(state)], True, (0, 255,255))
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -242,28 +242,33 @@ def createRoom():
 
     f = open("room_generator_log.txt", "a")
 
+    finished = False
+
     # response = rg.startGenerator(state)
     # response = font.render(response, True, (255, 255,255))
-    while True:
+    user_input = ""
+    response = ""
+    
+    while not finished:
         screen.fill((0,0,0))
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
         # screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
-        response = rg.startGenerator(state)
-        user_input = "HIII idk"
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-            #TODO: is there a way to switch between voice and keyboard more freely?
-            # if event.type == pygame.MOUSEBUTTONDOWN:
-            #     (mouse_x, mouse_y) = pygame.mouse.get_pos()
-            #     if input_rect.collidepoint(mouse_x, mouse_y):
-            #         user_input = vr.recogniseSpeech()
-            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE:
+                    user_input = user_input[:-1]
+                elif event.key == pygame.K_RETURN:
+                    current_state, response, finished = rg.startGenerator(state, user_input)
+                    state = current_state
 
-            #     else:
-            #         user_input +=event.unicode
+                    user_input = ""
+                else:
+                    user_input +=event.unicode
         
         pygame.draw.rect(screen, (255,255,0), input_rect)
         text_surface = medium_font.render(user_input, True, (255, 0, 255))
@@ -414,4 +419,14 @@ if __name__ == "__main__":
 
         # print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
         # print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
-        initialiseGame()
+        state = States.NAME_ROOM.value
+        user_input = "Dark Hole"
+        response = ""
+        finished = False
+        while not finished:
+            current_state, response, finished = rg.startGenerator(state, user_input)
+            state = current_state
+            print(response)
+            user_input = input(response)
+
+
