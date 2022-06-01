@@ -2,9 +2,9 @@ import enum
 class States(enum.Enum):
     NAME_ROOM = 1
     OVERALL_DESCRIPTION = 2
-    UPDATE_STORED_ITEM = 3
-    INPUT_PROCESS = 4
-    CREATE_ITEMS = 5
+    INPUT_PROCESS = 3
+    UPDATE_STORED_ITEM = 4
+    CREATE_NEW_ITEMS = 5
     CHECK_EXIST_ITEM = 6
 
 

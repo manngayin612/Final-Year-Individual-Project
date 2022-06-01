@@ -425,8 +425,8 @@ if __name__ == "__main__":
         finished = False
         while not finished:
             current_state, response, finished = rg.startGenerator(state, user_input)
+            print(current_state, response)
             state = current_state
-            print(response)
             user_input = input(response)
 
 

@@ -16,7 +16,6 @@ def ContentExtractor(text):
 
         # Coreference resolution
         resolved_text = vr.coreferenceResolution(nlp, log, max_dist=1)
-        print(resolved_text)
 
         print("Current: ", resolved_text.split("\n"))    
         current_resolved_text = resolved_text.split("\n")[-2]
