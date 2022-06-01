@@ -60,7 +60,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         if  "room" in object:
             print("createItems: room ==> IGNORE")
             queue.popleft()
-            return "", queue
+            return (state, (), ("", queue))
         else:
             print("createItem ==> SEARCHING DOMAIN")
             item, item_def = getItemDef(nlp, object)
@@ -76,7 +76,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             else:
                 prompt = "Is this updates to the \"{}\"?".format(item)
             states_dict[States.UPDATE_STORED_ITEM] = prompt
-            return ((state, prompt, False),())
+            return (state, (prompt, False),())
 
     # user_input = input(prompt)
     print("Said yes ", state)
@@ -87,7 +87,6 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             if "unlock" in action or "lock" in action:
                 print("Creating Unlock Item")
                 # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
-                #Store it into SQL
                 type = "unlock"
                 #TODO: Special case of a numberlock
 
@@ -105,23 +104,13 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             stored_action = cur.execute(action_query, (object,)).fetchone()
             print(stored_action)
 
-
+        stored_type = itemExisted(cur, room_name,  item)
         #item didnt existed at all
         if not stored_type:
-            # state = States.CREATE_NEW_ITEMS.value
             # Giving Description to the object
             prompt = "Short description for {}: ".format(object)
-            # description = input("Short description for {}: ".format(object))
-            return ((state, prompt, False), ())
+            return (state, (prompt, False), ())
 
-    
-            insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
-            if action == []: 
-                a = None
-            else:
-                a = str(action)
-            cur.execute(insert_object, (type, item, item_def, a, description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
-            print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
         elif stored_type != type: #was initialised as normal item but its an unlock item
             print("Please update")
             update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
@@ -132,6 +121,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
         print(state)
 
+    
     if state == States.CREATE_NEW_ITEMS.value:
         description = extra_input
         insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
@@ -144,45 +134,59 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
             
 
+    print("Check if all fields are completed.")
 
-        print("Check if all fields are completed.")
-        new_pairs = isEntryCompleted(cur,room_name, item, type)
-        if new_pairs:
-            queue.extend(new_pairs.items())
-        print(queue)
+    state, change_state, new_pairs = isEntryCompleted(state+1, cur,room_name, item, type, extra_input)
+    if change_state:
+        prompt, _  = change_state
+        return (state, (prompt, False),())
 
-        con.commit()
+    if new_pairs:
+        queue.extend(new_pairs.items())
+    print(queue)
+
+    con.commit()
     
     queue.popleft()
     print("Created item: ", queue, "\n")
-    return description, queue
+    
+    return (States.INPUT_PROCESS.value,(),(description, queue))
 # else:
 #     queue.popleft()
 #     return "", queue
 
 
-def isEntryCompleted(cur, room_name, item, type):
+def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
+    print("isEntrycompleted", state, type)
     pair = {}
     if type == "unlock":
-        get_record = """SELECT required_items, unlock_msg, unlock_action FROM {} WHERE item=? and type = ?;""".format(room_name)
-        result = cur.execute(get_record, (item,type,))
-        row = result.fetchone()
+        if state == States.CREATE_NEW_ITEMS.value:
+            print("getting entry from database")
+            get_record = """SELECT required_items, unlock_msg, unlock_action FROM {} WHERE item=? and type = ?;""".format(room_name)
+            result = cur.execute(get_record, (item,type,))
+            row = result.fetchone()
 
-        required_item = row[0]
-        unlock_msg = row[1]
-        unlock_action = row[2]
+            required_item = row[0]
+            unlock_msg = row[1]
+            unlock_action = row[2]
 
-        if required_item == None:
+            if required_item == None:
+                # user_input = input("Do you unlock it with a password?")
+                return (state+1, (states_dict[States.FILL_IN_UNLOCK.value], False),{})
 
-            user_input = input("Do you unlock it with a password?")
+
+        if state == States.FILL_IN_UNLOCK.value:
+            print("Filling in the unlock")
             if vr.sentenceSimilarity("no", user_input) > 0.9:
                 user_input = input("How do you unlock this item?")
+                prompt = "How do you unlock this item"
                 pair = te.ContentExtractor(user_input)
                 (a,t) = pair[item] 
                 required_item = t
 
                 unlock_action = a[0]
             else:
+                prompt = "What is the password for the lock?"
                 user_input = input("What is the password for the lock?")
                 required_item = user_input
                 type = "numberlock"
@@ -199,10 +203,13 @@ def isEntryCompleted(cur, room_name, item, type):
                 print("{} is the escape item".format(item))
                 update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
                 cur.execute(update_query, (item,))
-
+        print(state, pair)
         update_query = '''UPDATE {} SET type = ?, required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
         cur.execute(update_query, (type, required_item, unlock_msg, unlock_action, item))
-        return pair
+        return (state, (), pair)
+    else:
+        return (state, (), {})
+    
 
         
 def itemExisted(cur, room_name, item_name):
@@ -262,14 +269,16 @@ def startGenerator(state, user_input):
                 (o,(a,t)) = pairs_queue[0]
                 if state == States.INPUT_PROCESS.value or States.CREATE_NEW_ITEMS:
                     extra_input = user_input
-                (change_state, new_pairs_info) = createItems(state+1, con, cur, room_name, o, a, pairs_queue, extra_input)
-                
+                (state, change_state, new_pairs_info) = createItems(state+1, con, cur, room_name, o, a, pairs_queue, extra_input)
+                print(change_state, new_pairs_info)
                 if change_state:
-                    return change_state
+                    prompt, finished = change_state
+                    return state, prompt, finished
                 else:
                     description_of_item, pairs_queue = new_pairs_info 
                     newpairs = (te.ContentExtractor(description_of_item)).items()
                     pairs_queue.extendleft(newpairs)
+                    print("NEWPAIRS: ", pairs_queue)
                 # print(pairs_queue)
             else:
                 user_input = input("Do you have anything else to add? ")

@@ -1,11 +1,5 @@
 There is a door.
 There is a door.
+There is a door .
 There is a door.
-There is a door.
-There is a door.
-There is a door.
-There is a door.
-There is a door.
-There is a door.
-There is a door.
-There is a door.
+The door is locked..
