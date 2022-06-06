@@ -11,6 +11,7 @@ class States(enum.Enum):
     CONGRATS_MSG = 9
     ADD_MORE = 10
     FINISHED = 11
+    EXTRA_ITEM = 12
 
 states_dict = {}
 states_dict[States.NAME_ROOM] = "What do you want to call your room?"
@@ -22,3 +23,4 @@ states_dict[States.FILL_IN_PASSWORD] = "What is the password for the lock"
 states_dict[States.CONGRATS_MSG] = "What do you want to say to them after unlocking the item?"
 states_dict[States.ADD_MORE] = "Do you have anything else to add? "
 states_dict[States.FINISHED] = "The room is ready!"
+states_dict[States.EXTRA_ITEM] = "What else do you want to add? "

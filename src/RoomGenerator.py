@@ -119,11 +119,10 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         else:
             print("got this already")
 
-        print(state)
-
-    
-    if state == States.CREATE_NEW_ITEMS.value:
+    print("Before creating new item: ", state, extra_input)
+    if state == States.CREATE_NEW_ITEMS.value and not stored_type:
         description = extra_input
+        print("Description: ",description)
         insert_object = """INSERT INTO {} (type, item, item_def, action, description,required_items, unlock_msg, unlock_action,  combine_with, finished_item) VALUES (?,?,?,?,?,?,?,?,?,?)""".format(room_name)
         if action == []: 
             a = None
@@ -142,12 +141,12 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
     if new_pairs:
         queue.extend(new_pairs.items())
-    print(queue)
+    print("Queue: ", queue)
 
     con.commit()
     
     queue.popleft()
-    print("Created item: ", queue, "\n")
+    print("Created item: ", queue, " Description: ", description)
     
     return (States.INPUT_PROCESS.value,(),(description, queue))
 # else:
@@ -280,8 +279,11 @@ def startGenerator(state, user_input):
             print(state, pairs_queue)
             if len(pairs_queue)>0:
                 (o,(a,t)) = pairs_queue[0]
-                if state == States.INPUT_PROCESS.value or state == States.CREATE_NEW_ITEMS.value:
+                print("state: ", state)
+                if state == States.INPUT_PROCESS.value  or state == States.UPDATE_STORED_ITEM.value:
+                    print(" extra_input: ", user_input)
                     extra_input = user_input
+                print(o, a, pairs_queue)
                 (state, change_state, new_pairs_info) = createItems(state+1, con, cur, room_name, o, a, pairs_queue, extra_input)
                 print(change_state, new_pairs_info)
                 if change_state:
@@ -292,11 +294,14 @@ def startGenerator(state, user_input):
                     newpairs = (te.ContentExtractor(description_of_item)).items()
                     pairs_queue.extendleft(newpairs)
                     print("NEWPAIRS: ", pairs_queue)
+                    user_input = ""
+                    extra_input = ""
+                    state = States.INPUT_PROCESS.value-1
+                    
                 # print(pairs_queue)
             else:
                 print(state)
-                if state == States.CONGRATS_MSG.value or state == States.INPUT_PROCESS.value:
-                    
+                if state == States.CONGRATS_MSG.value or state == States.INPUT_PROCESS.value or state == States.OVERALL_DESCRIPTION.value:
                     print("if you have anything to add?", state)
                     return States.ADD_MORE.value, states_dict[States.ADD_MORE], finished
 
@@ -305,13 +310,14 @@ def startGenerator(state, user_input):
                         finished = True
                         return state+1, states_dict[States.FINISHED], finished
                     else:
-                        user_input = input("What else do you want to add? ")
-                        
+                        return States.EXTRA_ITEM.value, states_dict[States.EXTRA_ITEM], finished
+
+
+                if state == States.EXTRA_ITEM.value:
+                        state = States.INPUT_PROCESS.value
                         newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
                         pairs_queue.extendleft(newpairs)
                         print(pairs_queue)
 
-
-        f.close()
 
 
