@@ -43,7 +43,7 @@ def getItemDef(nlp, object):
 
 # Returning a tuple of (change state info, new pairs description)
 def createItems(state, con, cur, room_name, object, action, queue, extra_input=None):
-    global item, item_def, stored_type, type
+    global item, item_def, stored_type, type, description
 
     unlock_msg = None
     required_item = None
@@ -135,7 +135,6 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             
 
     print("Check if all fields are completed.")
-
     state, change_state, new_pairs = isEntryCompleted(state+1, cur,room_name, item, type, extra_input)
     if change_state:
         prompt, _  = change_state
@@ -157,7 +156,8 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
 
 def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
-    print("isEntrycompleted", state, type)
+    print("isEntrycompleted", state, type, item)
+    global required_item, unlock_action, unlock_msg
     pair = {}
     if type == "unlock":
         if state == States.CREATE_NEW_ITEMS.value:
@@ -172,44 +172,57 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
 
             if required_item == None:
                 # user_input = input("Do you unlock it with a password?")
-                return (state+1, (states_dict[States.FILL_IN_UNLOCK.value], False),{})
+                return (States.ASK_FOR_UNLOCK_ITEM.value-2, (states_dict[States.ASK_FOR_UNLOCK_ITEM], False),{})
+    else:
+        print("Everything is fine")
+        return (state, (), {})
 
-
-        if state == States.FILL_IN_UNLOCK.value:
+    print(state)
+    if state == States.ASK_FOR_UNLOCK_ITEM.value:
+        print("Check if is password or not")
+        if vr.sentenceSimilarity("no", extra_input) > 0.9:
             print("Filling in the unlock")
-            if vr.sentenceSimilarity("no", user_input) > 0.9:
-                user_input = input("How do you unlock this item?")
-                prompt = "How do you unlock this item"
-                pair = te.ContentExtractor(user_input)
-                (a,t) = pair[item] 
-                required_item = t
+            return (States.FILL_IN_UNLOCK_ITEM.value-2, (states_dict[States.FILL_IN_UNLOCK_ITEM], False), {})
+        else:
+            print("filling in password")
+            return (States.FILL_IN_PASSWORD.value-2, (states_dict[States.FILL_IN_PASSWORD], False), {})
+    
+    print("after type = unlock", state)
+    if state == States.FILL_IN_UNLOCK_ITEM.value:
+        print("filled in object")
+        pair = te.ContentExtractor(user_input)
+        (a,t) = pair[item]
+        required_item = t
+        unlock_action = a[0]
 
-                unlock_action = a[0]
-            else:
-                prompt = "What is the password for the lock?"
-                user_input = input("What is the password for the lock?")
-                required_item = user_input
-                type = "numberlock"
-                print(required_item)
-            print(pair)
+        if unlock_msg == None:
+            return (state, (states_dict[States.CONGRATS_MSG], False), {})
+
+    elif state == States.FILL_IN_PASSWORD.value:
+        print("filled in password")
+        required_item = extra_input
+        type = "numberlock"
+        print('required_items: ', required_item)
+        print(pair)
 
 
         if unlock_msg == None:
-            user_input = input("What do you want to say to them after unlocking the item?")
-            unlock_msg = user_input
-            escaped_prob = vr.sentenceSimilarity(unlock_msg, "You escaped.")
-            print(escaped_prob)
-            if escaped_prob > 0.7:
-                print("{} is the escape item".format(item))
-                update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
-                cur.execute(update_query, (item,))
-        print(state, pair)
-        update_query = '''UPDATE {} SET type = ?, required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
-        cur.execute(update_query, (type, required_item, unlock_msg, unlock_action, item))
-        return (state, (), pair)
-    else:
-        return (state, (), {})
-    
+            return (States.CONGRATS_MSG.value-2, (states_dict[States.CONGRATS_MSG], False), {})
+
+    if state == States.CONGRATS_MSG.value:
+        print("unlock_msg: ", extra_input)
+        escaped_prob = vr.sentenceSimilarity(unlock_msg, "You escaped.")
+        print(escaped_prob)
+        if escaped_prob > 0.7:
+            print("{} is the escape item".format(item))
+            update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
+            cur.execute(update_query, (item,))
+    print(state, pair)
+    update_query = '''UPDATE {} SET type = ?, required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
+    cur.execute(update_query, (type, required_item, unlock_msg, unlock_action, item))
+    return (state, (), pair)
+
+
 
         
 def itemExisted(cur, room_name, item_name):
@@ -267,7 +280,7 @@ def startGenerator(state, user_input):
             print(state, pairs_queue)
             if len(pairs_queue)>0:
                 (o,(a,t)) = pairs_queue[0]
-                if state == States.INPUT_PROCESS.value or States.CREATE_NEW_ITEMS:
+                if state == States.INPUT_PROCESS.value or state == States.CREATE_NEW_ITEMS.value:
                     extra_input = user_input
                 (state, change_state, new_pairs_info) = createItems(state+1, con, cur, room_name, o, a, pairs_queue, extra_input)
                 print(change_state, new_pairs_info)
@@ -281,17 +294,22 @@ def startGenerator(state, user_input):
                     print("NEWPAIRS: ", pairs_queue)
                 # print(pairs_queue)
             else:
-                user_input = input("Do you have anything else to add? ")
-
-
-                if vr.sentenceSimilarity(user_input, "no") > 0.9:
-                    finished = True
-                else:
-                    user_input = input("What else do you want to add? ")
+                print(state)
+                if state == States.CONGRATS_MSG.value or state == States.INPUT_PROCESS.value:
                     
-                    newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
-                    pairs_queue.extendleft(newpairs)
-                    print(pairs_queue)
+                    print("if you have anything to add?", state)
+                    return States.ADD_MORE.value, states_dict[States.ADD_MORE], finished
+
+                if state == States.ADD_MORE.value:
+                    if vr.sentenceSimilarity(user_input, "no") > 0.9:
+                        finished = True
+                        return state+1, states_dict[States.FINISHED], finished
+                    else:
+                        user_input = input("What else do you want to add? ")
+                        
+                        newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
+                        pairs_queue.extendleft(newpairs)
+                        print(pairs_queue)
 
 
         f.close()
