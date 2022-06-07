@@ -96,7 +96,6 @@ def identifyActionsAndObjects(nlp, speech):
         
     inputs.append(Input(action, direct_object, tool=indirect_object, password=password))
     
-
     return inputs
 
 def identifySubject(nlp, input):
@@ -178,35 +177,23 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
 def getRoot(nlp, sent):
     # doc = nlp(sent)
     return sent.root
-   
-
 
 def getSpanText(doc, start, end):
     return str(doc[start:end])
         
-        
-
 def findLongestSpan(nlp, doc, matches):
     
     new_matches = []
     if len(matches) > 0:
-
-    
         longest_span = matches[0]
         for match_id, start, end in matches:
-            # print("\n")
+
             string_id = nlp.vocab.strings[match_id]
-            # print(match_id, string_id, start, end ,getSpanText(doc, start, end))
             if longest_span != None:
                 (prev_id, prev_start, prev_end) = longest_span
-                #Merge case: one span is within another span e.g. "is writing a blog" "a blog"
                 if prev_start  >= start+1 and prev_end <= end:
-                    # print("DELETED {} {} {}".format( prev_start, prev_end , getSpanText(doc, prev_start, prev_end)))
                     longest_span = (match_id, start, end) 
                 elif prev_end  == start:
-                    # print("ADDED {} {} {}".format(prev_start, end ,getSpanText(doc, prev_start, end)))
-                    # print("DELETED {} {} {}".format(prev_start, prev_end ,getSpanText(doc, prev_start, prev_end)))
-                    # print("DELETED {} {} {}".format(start, end ,getSpanText(doc, start, end)))
                     longest_span = (match_id, prev_start, end)
                 elif start >= prev_start and start <= prev_end:
                     longest_span = (match_id, prev_start, end)
@@ -217,14 +204,7 @@ def findLongestSpan(nlp, doc, matches):
                     new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
                     longest_span = (match_id, start, end)
 
-            # print("TEMP:", longest_span)
-
         new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
-    
-
-        # print("\nFinal Matches")
-        # for (_, start, end) in new_matches:
-        #     print(start, end, getSpanText(doc, start,end))
 
     return new_matches
 
@@ -281,8 +261,6 @@ def processSpeech(input):
     # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
 
     # zipped = zip(action, direct_object, password)
- 
-
     return inputs
 
 def isSimilarWord(stored_word, input_word):

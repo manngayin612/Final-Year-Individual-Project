@@ -46,6 +46,7 @@ small_font = pygame.font.SysFont("Courier", 15)
 button_font = pygame.font.SysFont("Rockwell", 20)
 
 white = (255, 255, 255)
+black = (0,0,0)
 
 
 
@@ -197,13 +198,26 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     buttontext = button_font.render(text, True, (0,0,255))
     screen.blit(buttontext, (bg_rect[0]+(width-buttontext.get_width())/2, bg_rect[1]+(height-buttontext.get_height())))
     
+def create_image_button(image, x, y):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed(3)
+
+    img = pygame.image.load(image)
+
+    bg_rect = pygame.Rect(x,y,img.get_width(),img.get_height())
+    pygame.draw.rect(screen, white, bg_rect)
+    
+    if x + img.get_width() > mouse[0] > x and y + img.get_height() > mouse[1] > y:
+        if click[0] == 1:
+            return True
+    screen.blit(img, bg_rect)
 
 
 def titleScreen():
-    text = font.render("Welcome to the game", True, white)
+    text = font.render("Welcome to the game", True, black)
 
     while True:
-        screen.fill((0,0,0))
+        screen.fill(white)
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
@@ -226,7 +240,7 @@ def titleScreen():
 def createRoom():
 
     state = States.NAME_ROOM.value
-    title_text = medium_font.render(states_dict[States(state)], True, white)
+    title_text = medium_font.render(states_dict[States(state)], True, black)
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -246,15 +260,23 @@ def createRoom():
     response = ""
     
     while not finished:
-        screen.fill((0,0,0))
+        screen.fill(white)
         if response == "":
             screen.blit(title_text, (50, 200))
         # screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
 
+        mic = create_image_button("./images/microphone.png", 0, 40)
+        if mic :
+            user_input = vr.recogniseSpeech()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            # if event.type == pygame.MOUSEBUTTONDOWN:
+            #     (mouse_x, mouse_y) = pygame.mouse.get_pos()
+            #     if mic.collidepoint(mouse_x, mouse_y):
+            #         user_input = vr.recogniseSpeech()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
@@ -272,7 +294,7 @@ def createRoom():
         screen.blit(text_surface,input_rect.topleft)
 
         
-        response_text = medium_font.render(response, True, white)
+        response_text = medium_font.render(response, True, black)
         screen.blit(response_text, (50,200))
 
         pygame.display.flip()
@@ -287,7 +309,7 @@ def endingScreen(room):
     text = font.render("You escaped!", True, (255,255,255))
 
     while True:
-        screen.fill((0,0,0))
+        screen.fill(white)
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
@@ -334,7 +356,7 @@ def playLevel(room):
 
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
     while not room.success:
-        screen.fill((0,0,0))
+        screen.fill(white)
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
         screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
 
