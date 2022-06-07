@@ -119,6 +119,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         else:
             print("got this already")
 
+    print(type)
     print("Before creating new item: ", state, extra_input)
     if state == States.CREATE_NEW_ITEMS.value and not stored_type:
         description = extra_input
@@ -189,13 +190,14 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
     print("after type = unlock", state)
     if state == States.FILL_IN_UNLOCK_ITEM.value:
         print("filled in object")
-        pair = te.ContentExtractor(user_input)
+        pair = te.ContentExtractor(extra_input)
+        print(extra_input, pair)
         (a,t) = pair[item]
         required_item = t
         unlock_action = a[0]
 
         if unlock_msg == None:
-            return (state, (states_dict[States.CONGRATS_MSG], False), {})
+            return (States.CONGRATS_MSG.value-2, (states_dict[States.CONGRATS_MSG], False), {})
 
     elif state == States.FILL_IN_PASSWORD.value:
         print("filled in password")
@@ -210,15 +212,18 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
 
     if state == States.CONGRATS_MSG.value:
         print("unlock_msg: ", extra_input)
+        unlock_msg = extra_input
         escaped_prob = vr.sentenceSimilarity(unlock_msg, "You escaped.")
         print(escaped_prob)
         if escaped_prob > 0.7:
             print("{} is the escape item".format(item))
             update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
             cur.execute(update_query, (item,))
+
     print(state, pair)
     update_query = '''UPDATE {} SET type = ?, required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
     cur.execute(update_query, (type, required_item, unlock_msg, unlock_action, item))
+    print("Added to database: ", unlock_msg)
     return (state, (), pair)
 
 
@@ -275,12 +280,15 @@ def startGenerator(state, user_input):
             pairs_queue = deque((te.ContentExtractor(user_input)).items())
             print(pairs_queue)
 
+        if state == States.EXTRA_ITEM.value:
+            state = States.OVERALL_DESCRIPTION.value
+
         while(not finished):
             print(state, pairs_queue)
             if len(pairs_queue)>0:
                 (o,(a,t)) = pairs_queue[0]
                 print("state: ", state)
-                if state == States.INPUT_PROCESS.value  or state == States.UPDATE_STORED_ITEM.value:
+                if state == States.INPUT_PROCESS.value  or state == States.UPDATE_STORED_ITEM.value or state == States.FILL_IN_UNLOCK_ITEM.value-2 or state == States.FILL_IN_PASSWORD.value-2 or  state == States.CONGRATS_MSG.value-2:
                     print(" extra_input: ", user_input)
                     extra_input = user_input
                 print(o, a, pairs_queue)
@@ -301,7 +309,7 @@ def startGenerator(state, user_input):
                 # print(pairs_queue)
             else:
                 print(state)
-                if state == States.CONGRATS_MSG.value or state == States.INPUT_PROCESS.value or state == States.OVERALL_DESCRIPTION.value:
+                if state == States.CONGRATS_MSG.value or state == States.INPUT_PROCESS.value or state == States.OVERALL_DESCRIPTION.value :
                     print("if you have anything to add?", state)
                     return States.ADD_MORE.value, states_dict[States.ADD_MORE], finished
 
@@ -312,12 +320,10 @@ def startGenerator(state, user_input):
                     else:
                         return States.EXTRA_ITEM.value, states_dict[States.EXTRA_ITEM], finished
 
-
                 if state == States.EXTRA_ITEM.value:
-                        state = States.INPUT_PROCESS.value
-                        newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
-                        pairs_queue.extendleft(newpairs)
-                        print(pairs_queue)
+                    newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
+                    pairs_queue.extendleft(newpairs)
+                    print("After adding Extra Item: ", pairs_queue)
 
 
 

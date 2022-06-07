@@ -1,6 +1,4 @@
-from email.policy import default
 from random import randrange
-from platformdirs import user_cache_dir
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem

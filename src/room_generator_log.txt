@@ -124,3 +124,45 @@ There is a box.
 There is a table.
 there is a box.
 there is nothing.
+there is a table.
+There is a box on it.
+Open the box to get the key.
+Try to unlock the door.
+the door is locked..
+There is a door..
+There is a table.
+There is a box on the table.
+The box is locked..
+there be a door.
+There is a box.
+The box is locked..
+There is a table.
+There is a box .
+The box is locked..
+a key.
+a door.
+There is a box.
+There is a box.
+The box is locked..
+There is a box.
+the box is locked..
+There is a box.
+the box is locked..
+There is a box.
+the box is locked..
+There is a box.
+The box is locked..
+unlock the box with a key.
+There is a table.
+There is a table.
+it is locked..
+There is a box.
+It is locked..
+There is a box.
+the box is locked..
+unlock the box with a key.
+There is a box.
+The box is locked..
+unlock the box with a key.
+There is a box.
+The box is locked..
