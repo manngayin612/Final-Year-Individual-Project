@@ -2,7 +2,7 @@ from random import randrange
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem
-from Room import FirstRoom, Room, SecondRoom
+from Room import Room
 from Input import Input
 import RoomGenerator as rg
 from States import States, states_dict
@@ -16,9 +16,10 @@ import sqlite3
 from nltk.corpus import wordnet as wn
 import pygame
 import sys
+import os
 
 voice_input = False
-test = True
+test = False
 
 # objects=[]
 # current_room_items = ["key", "door", "table"]
@@ -28,6 +29,7 @@ rooms=[]
 
 #Initialising the game screen
 pygame.init()
+pygame.font.init()
 SQUARESIZE = 100
 screen_width = 7 * SQUARESIZE
 screen_height = 7 * SQUARESIZE
@@ -37,13 +39,19 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Escape Room")
 
 
-font = pygame.font.Font(pygame.font.get_default_font(), 50)
-medium_font = pygame.font.Font(pygame.font.get_default_font(), 30)
-small_font = pygame.font.Font(pygame.font.get_default_font(), 15)
+font = pygame.font.SysFont("Impact", 50)
+medium_font = pygame.font.SysFont("Courier", 20)
+small_font = pygame.font.SysFont("Courier", 15)
+
+button_font = pygame.font.SysFont("Rockwell", 20)
+
+white = (255, 255, 255)
 
 
 
 def initialiseGame():
+
+    os.remove("escaperoom.sqlite")
     open('user_input_log.txt', 'w').close()
     con = sqlite3.connect("escaperoom.sqlite")
     cur = con.cursor()
@@ -61,14 +69,6 @@ def initialiseGame():
         room.initialiseRoom(result)
         rooms.append(room)
     print(rooms)
-
-
-
-    # firstRoom = FirstRoom(1, [])
-    # secondRoom = SecondRoom(2, firstRoom.bag)
-    # rooms.extend([firstRoom, secondRoom])
-
-
 
 def identifyObject(room, item):
     if item == "":
@@ -185,7 +185,6 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
 
     click = pygame.mouse.get_pressed(3)
 
-
     bg_rect = pygame.Rect(x,y,width,height)
     pygame.draw.rect(screen, defaultcolour, bg_rect)
 
@@ -195,13 +194,13 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
         if click[0] == 1:
             return True
 
-    buttontext = font.render(text, True, (0,0,255))
+    buttontext = button_font.render(text, True, (0,0,255))
     screen.blit(buttontext, (bg_rect[0]+(width-buttontext.get_width())/2, bg_rect[1]+(height-buttontext.get_height())))
     
 
 
 def titleScreen():
-    text = font.render("Welcome to the game", True, (255,255,255))
+    text = font.render("Welcome to the game", True, white)
 
     while True:
         screen.fill((0,0,0))
@@ -225,8 +224,9 @@ def titleScreen():
 
 
 def createRoom():
+
     state = States.NAME_ROOM.value
-    title_text = font.render(states_dict[States(state)], True, (0, 255,255))
+    title_text = medium_font.render(states_dict[States(state)], True, white)
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -242,14 +242,13 @@ def createRoom():
 
     finished = False
 
-    # response = rg.startGenerator(state)
-    # response = font.render(response, True, (255, 255,255))
     user_input = ""
     response = ""
     
     while not finished:
         screen.fill((0,0,0))
-        screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
+        if response == "":
+            screen.blit(title_text, (50, 200))
         # screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
 
         for event in pygame.event.get():
@@ -273,8 +272,8 @@ def createRoom():
         screen.blit(text_surface,input_rect.topleft)
 
         
-        response_text = medium_font.render(response, True, (255,0,0))
-        screen.blit(response_text, (100,200))
+        response_text = medium_font.render(response, True, white)
+        screen.blit(response_text, (50,200))
 
         pygame.display.flip()
 
