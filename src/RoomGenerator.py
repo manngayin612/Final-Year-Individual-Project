@@ -280,8 +280,8 @@ def startGenerator(state, user_input):
             pairs_queue = deque((te.ContentExtractor(user_input)).items())
             print(pairs_queue)
 
-        if state == States.EXTRA_ITEM.value:
-            state = States.OVERALL_DESCRIPTION.value
+        # if state == States.EXTRA_ITEM.value:
+        #     state = States.OVERALL_DESCRIPTION.value
 
         while(not finished):
             print(state, pairs_queue)
@@ -318,12 +318,15 @@ def startGenerator(state, user_input):
                         finished = True
                         return state+1, states_dict[States.FINISHED], finished
                     else:
+                        print("Add somthing new please: ", state)
                         return States.EXTRA_ITEM.value, states_dict[States.EXTRA_ITEM], finished
 
                 if state == States.EXTRA_ITEM.value:
+                    print("added extra item", state)
                     newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
                     pairs_queue.extendleft(newpairs)
                     print("After adding Extra Item: ", pairs_queue)
+                    state = States.OVERALL_DESCRIPTION.value
 
 
 

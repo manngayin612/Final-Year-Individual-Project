@@ -47,17 +47,16 @@ button_font = pygame.font.SysFont("Rockwell", 20)
 
 white = (255, 255, 255)
 black = (0,0,0)
+main_theme_color = (255,255,255)
 
 
 
 def initialiseGame():
 
-    os.remove("escaperoom.sqlite")
+    
     open('user_input_log.txt', 'w').close()
     con = sqlite3.connect("escaperoom.sqlite")
     cur = con.cursor()
-
-    #please create a room description
 
     select_room = '''SELECT name FROM sqlite_master WHERE type='table';'''
     result = cur.execute(select_room).fetchall()
@@ -195,7 +194,7 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
         if click[0] == 1:
             return True
 
-    buttontext = button_font.render(text, True, (0,0,255))
+    buttontext = button_font.render(text, True, white)
     screen.blit(buttontext, (bg_rect[0]+(width-buttontext.get_width())/2, bg_rect[1]+(height-buttontext.get_height())))
     
 def create_image_button(image, x, y):
@@ -205,7 +204,7 @@ def create_image_button(image, x, y):
     img = pygame.image.load(image)
 
     bg_rect = pygame.Rect(x,y,img.get_width(),img.get_height())
-    pygame.draw.rect(screen, white, bg_rect)
+    pygame.draw.rect(screen, main_theme_color, bg_rect)
     
     if x + img.get_width() > mouse[0] > x and y + img.get_height() > mouse[1] > y:
         if click[0] == 1:
@@ -217,12 +216,12 @@ def titleScreen():
     text = font.render("Welcome to the game", True, black)
 
     while True:
-        screen.fill(white)
+        screen.fill(main_theme_color)
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
-        create = create_button("Create Room", ((screen_width-125)/2), (screen_height+50)/2, 125, 35, (255,255,255), (255,255,0), medium_font)
+        start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, black, (255,255,0), medium_font)
+        create = create_button("Create Room", ((screen_width-125)/2), (screen_height+50)/2, 125, 35, black, (255,255,0), medium_font)
 
         if start:
             playLevel(rooms[0])
@@ -238,7 +237,7 @@ def titleScreen():
 
 
 def createRoom():
-
+    os.remove("escaperoom.sqlite")
     state = States.NAME_ROOM.value
     title_text = medium_font.render(states_dict[States(state)], True, black)
 
@@ -260,14 +259,19 @@ def createRoom():
     response = ""
     
     while not finished:
-        screen.fill(white)
+        screen.fill(main_theme_color)
         if response == "":
             screen.blit(title_text, (50, 200))
         # screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
 
-        mic = create_image_button("./images/microphone.png", 0, 40)
+        mic = create_image_button("./images/microphone.jpeg", screen_width-250, screen_height-100)
+        redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
+
         if mic :
             user_input = vr.recogniseSpeech()
+
+        if redo:
+            user_input = ""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -309,7 +313,7 @@ def endingScreen(room):
     text = font.render("You escaped!", True, (255,255,255))
 
     while True:
-        screen.fill(white)
+        screen.fill(main_theme_color)
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
@@ -334,7 +338,7 @@ def playLevel(room):
     title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, (255,255,255))
 
     # Description of the room
-    description = small_font.render(room.description, True, (255,255,255))
+    description = small_font.render(room.description, True, black)
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -356,7 +360,7 @@ def playLevel(room):
 
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
     while not room.success:
-        screen.fill(white)
+        screen.fill(main_theme_color)
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
         screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
 
@@ -408,6 +412,7 @@ import spacy
 if __name__ == "__main__":
     if not test:
         initialiseGame()
+        print("Room Initialised.")
         titleScreen()
 
     else:
