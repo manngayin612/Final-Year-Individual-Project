@@ -51,17 +51,14 @@ def textToSpeech(text):
     engine.setProperty('voice', "com.apple.speech.synthesis.voice.daniel")
     engine.setProperty("rate", 160)
 
-    engine.save_to_file(text, 'speech.mp3')
+    engine.say(text, 'speech.mp3')
     print("saved to file")
     engine.runAndWait()
     print("run and wait")
-    # engine.stop()
+    engine.stop()
 
     # tts = gTTS(text)
     # tts.save('speech.wav')
-
-
-
 
 
 def identifyActionsAndObjects(nlp, speech):

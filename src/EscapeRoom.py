@@ -270,6 +270,7 @@ def read_aloud():
 def createRoom():
     os.remove("escaperoom.sqlite")
     state = States.NAME_ROOM.value
+    title_text = states_dict[States(state)]
     # title_text = medium_font.render(states_dict[States(state)], True, black)
 
     # Input Rectangle
@@ -284,22 +285,24 @@ def createRoom():
 
     f = open("room_generator_log.txt", "a")
 
-    finished = False
 
     user_input = ""
     response = ""
 
-    # vr.textToSpeech(states_dict[States(state)])
     play_counter = 0
     
+    finished = False
     while not finished:
+        print("enter while loop")
         screen.fill(main_theme_color)
         if response == "":
             # screen.blit(title_text, (50, 200))
-            blit_text(screen, states_dict[States(state)], (50,200), medium_font, black)
+            blit_text(screen, title_text, (50,200), medium_font, black)
             if (play_counter == 0):
-                read_aloud()
+                # read_aloud()
+                vr.textToSpeech(states_dict[States(state)])
                 play_counter += 1
+        print(finished)
             
         mic = create_image_button("./images/microphone.jpeg", screen_width-250, screen_height-100)
         redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
@@ -310,16 +313,16 @@ def createRoom():
         if redo:
             user_input = ""
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+            # if event.type == pygame.QUIT:
+            #     pygame.quit()
+            #     sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
                     user_input = user_input[:-1]
                 elif event.key == pygame.K_RETURN:
                     current_state, response, finished = rg.startGenerator(state, user_input)
                     state = current_state
-
+                    play_counter = 1
                     user_input = ""
                 else:
                     user_input +=event.unicode
@@ -331,10 +334,16 @@ def createRoom():
         # screen.blit(text_surface,input_rect.topleft)
 
         blit_text(screen, response, (50,200), medium_font, black)
+        if response != "":
+            title_text = ""
+            if play_counter == 1:
+                vr.textToSpeech(response)
+                play_counter += 1
         # response_text = medium_font.render(response, True, black)
         # screen.blit(response_text, (50,200))
 
         pygame.display.flip()
+
 
 
 
@@ -398,9 +407,9 @@ def playLevel(room):
         screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+            # if event.type == pygame.QUIT:
+            #     pygame.quit()
+            #     sys.exit()
 
             #TODO: is there a way to switch between voice and keyboard more freely?
             if event.type == pygame.MOUSEBUTTONDOWN:
