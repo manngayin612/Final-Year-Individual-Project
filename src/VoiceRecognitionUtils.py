@@ -11,6 +11,8 @@ import ChatGenerator
 from random import randrange
 import VoiceRecognitionUtils as vr
 from sentence_transformers import SentenceTransformer, util
+import pyttsx3
+from gtts import gTTS
 
 
 from nltk.corpus import wordnet as wn
@@ -41,6 +43,23 @@ def recogniseSpeech():
         print("Google Speech Recognition could not understand audio")
     except sr.RequestError as e:
         print("Could not request results from Googlse Speech Recognition service; {0}".format(e))
+
+
+def textToSpeech(text):
+
+    engine = pyttsx3.init()
+    engine.setProperty('voice', "com.apple.speech.synthesis.voice.daniel")
+    engine.setProperty("rate", 160)
+
+    engine.save_to_file(text, 'speech.mp3')
+    print("saved to file")
+    engine.runAndWait()
+    print("run and wait")
+    # engine.stop()
+
+    # tts = gTTS(text)
+    # tts.save('speech.wav')
+
 
 
 
@@ -270,22 +289,6 @@ def isSimilarWord(stored_word, input_word):
     return input_word in synonyms or input_word in hypernyms
 
     
-# def getSynsetsList(word):
-#     nlp = spacy.load('en_core_web_sm')
-#     nlp.add_pipe("spacy_wordnet", after='tagger', config={'lang': nlp.lang})
-#     token = nlp(word)[0]
-
-#     synsets = token._.wordnet.synsets()
-#     # print(word)
-#     # for ss in synsets:
-#     #     for hyper in ss.hypernyms():
-#     #         print(ss,hyper)
-#     lemmas_for_synsets = [lemma for s in synsets for lemma in s.lemma_names()]
-#     hypernyms = [hyper for s in synsets for hyper_synset in s.hypernyms() for hyper in hyper_synset.lemma_names()]
-#     # TODO: Filter the ones with low similarity
-#     return set(lemmas_for_synsets+hypernyms)
-
-
 def generateResponse(res):
     num_beams = 30
     num_return_sequences = 20

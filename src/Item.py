@@ -133,8 +133,7 @@ class CombinableItem(Item):
             return vr.generateResponse("You have successfully combined {} and {}. You got a new {}".format(self.getName(), component, self.finished_item.getName()))
         else:
             return vr.generateResponse("You cannot combine {} with {}.".format(self.getName(), component))
-            
-
+        
 
     def performAction(self, room, input):
         print(input.tool)

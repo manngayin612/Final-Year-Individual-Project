@@ -1,4 +1,5 @@
 from random import randrange
+from tkinter import Y
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem
@@ -15,8 +16,10 @@ import sqlite3
 
 from nltk.corpus import wordnet as wn
 import pygame
+import math
 import sys
 import os
+import time
 
 voice_input = False
 test = False
@@ -28,7 +31,9 @@ threshold = 0.2
 rooms=[]
 
 #Initialising the game screen
+
 pygame.init()
+pygame.mixer.init()
 pygame.font.init()
 SQUARESIZE = 100
 screen_width = 7 * SQUARESIZE
@@ -212,6 +217,25 @@ def create_image_button(image, x, y):
     screen.blit(img, bg_rect)
 
 
+def blit_text(surface, text, pos, font, color=pygame.Color('black')):
+    words = [word.split(' ') for word in text.splitlines()]  # 2D array where each row is a list of words.
+    space = font.size(' ')[0]  # The width of a space.
+    max_width, max_height = surface.get_size()
+    x, y = pos
+    for line in words:
+        for word in line:
+            word_surface = font.render(word, 0, color)
+            word_width, word_height = word_surface.get_size()
+            if x + word_width >= max_width-20:
+                x = pos[0]  # Reset the x.
+                y += word_height  # Start on new row.
+            surface.blit(word_surface, (x, y))
+            x += word_width + space
+        x = pos[0]  # Reset the x.
+        y += word_height  # Start on new row.
+
+
+
 def titleScreen():
     text = font.render("Welcome to the game", True, black)
 
@@ -236,10 +260,17 @@ def titleScreen():
         pygame.display.update()
 
 
+def read_aloud():            
+    sound_obj = pygame.mixer.Sound("speech.mp3")
+    print(sound_obj.get_length())
+    sound_obj.play()
+
+    time.sleep(math.ceil(sound_obj.get_length()))
+
 def createRoom():
     os.remove("escaperoom.sqlite")
     state = States.NAME_ROOM.value
-    title_text = medium_font.render(states_dict[States(state)], True, black)
+    # title_text = medium_font.render(states_dict[States(state)], True, black)
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -257,13 +288,19 @@ def createRoom():
 
     user_input = ""
     response = ""
+
+    # vr.textToSpeech(states_dict[States(state)])
+    play_counter = 0
     
     while not finished:
         screen.fill(main_theme_color)
         if response == "":
-            screen.blit(title_text, (50, 200))
-        # screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
-
+            # screen.blit(title_text, (50, 200))
+            blit_text(screen, states_dict[States(state)], (50,200), medium_font, black)
+            if (play_counter == 0):
+                read_aloud()
+                play_counter += 1
+            
         mic = create_image_button("./images/microphone.jpeg", screen_width-250, screen_height-100)
         redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
 
@@ -276,12 +313,6 @@ def createRoom():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
-            # if event.type == pygame.MOUSEBUTTONDOWN:
-            #     (mouse_x, mouse_y) = pygame.mouse.get_pos()
-            #     if mic.collidepoint(mouse_x, mouse_y):
-            #         user_input = vr.recogniseSpeech()
-
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
                     user_input = user_input[:-1]
@@ -294,12 +325,14 @@ def createRoom():
                     user_input +=event.unicode
         
         pygame.draw.rect(screen, (255,255,0), input_rect)
-        text_surface = medium_font.render(user_input, True, (255, 0, 255))
-        screen.blit(text_surface,input_rect.topleft)
 
-        
-        response_text = medium_font.render(response, True, black)
-        screen.blit(response_text, (50,200))
+        blit_text(screen, user_input, input_rect.topleft, medium_font, (255,0,255))
+        # text_surface = medium_font.render(user_input, True, (255, 0, 255))
+        # screen.blit(text_surface,input_rect.topleft)
+
+        blit_text(screen, response, (50,200), medium_font, black)
+        # response_text = medium_font.render(response, True, black)
+        # screen.blit(response_text, (50,200))
 
         pygame.display.flip()
 

@@ -14,8 +14,8 @@ class States(enum.Enum):
     EXTRA_ITEM = 12
 
 states_dict = {}
-states_dict[States.NAME_ROOM] = "What do you want to call your room?"
-states_dict[States.OVERALL_DESCRIPTION] = "Tell me about the room:"
+states_dict[States.NAME_ROOM] = "It's time to create your own room! Lock the people up and watch them suffer...Before that...How should we call your room?" 
+states_dict[States.OVERALL_DESCRIPTION] = "Tell them a story...why are they here? what can they see in here?"
 states_dict[States.UPDATE_STORED_ITEM] = "update stored item"
 states_dict[States.ASK_FOR_UNLOCK_ITEM] = "Do you unlock it with a password?"
 states_dict[States.FILL_IN_UNLOCK_ITEM] = "How do you unlock this item"

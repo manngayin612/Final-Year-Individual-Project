@@ -1,2 +1,15 @@
 .DS_Store
 .DS_Store
+*.png
+*.txt
+*.pyc
+*.DS_Store
+*.ai
+*.mp3
+*.jpg
+src/neuralcoref
+src/temp.py
+src/cache.json
+src/escaperoom.sqlite
+*.jpeg
+Report/.DS_Store
