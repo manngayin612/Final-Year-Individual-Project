@@ -72,7 +72,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
             stored_type = itemExisted(cur, room_name,  item)
             if not stored_type:
-                prompt = "Is \"{}\" something you want to add into the room?".format(item)
+                prompt = "Are you trying to add \"{}\" into the room?".format(item)
             else:
                 prompt = "Is this updates to the \"{}\"?".format(item)
             states_dict[States.UPDATE_STORED_ITEM] = prompt
@@ -108,7 +108,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         #item didnt existed at all
         if not stored_type:
             # Giving Description to the object
-            prompt = "Short description for {}: ".format(object)
+            prompt = "Maybe try giving me a short description about the item? It is locked? Does it give any hint about other objects? Or does it contains something else?".format(object)
             return (state, (prompt, False), ())
 
         elif stored_type != type: #was initialised as normal item but its an unlock item

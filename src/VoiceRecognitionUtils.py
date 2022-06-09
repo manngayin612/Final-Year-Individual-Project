@@ -49,7 +49,7 @@ def textToSpeech(text):
 
     engine = pyttsx3.init()
     engine.setProperty('voice', "com.apple.speech.synthesis.voice.daniel")
-    engine.setProperty("rate", 160)
+    engine.setProperty("rate", 140)
 
     engine.say(text, 'speech.mp3')
     print("saved to file")
