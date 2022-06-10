@@ -57,8 +57,11 @@ class UnlockItem(Item):
         super().__init__(name, item_def, actions, description=description)
         self.actions.append("unlock")
         self.required_items = required_items
+        if unlock_action == None:
+            self.unlock_action = "unlock"
+        else:
+            self.unlock_action = unlock_action
         self.unlock_message = unlock_msg
-        self.unlock_action = unlock_action
 
     def checkRequired(self, bag):
         return self.required_items in bag
@@ -69,7 +72,7 @@ class UnlockItem(Item):
             msg += self.getDescription()
 
         elif input.action == self.unlock_action:
-            if self.checkRequired(room.bag):
+            if self.checkRequired(room.bag) or input.password == self.required_items:
                 msg += self.unlock_message
                 self.success = True
             else: 

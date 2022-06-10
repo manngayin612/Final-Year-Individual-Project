@@ -357,7 +357,7 @@ def createRoom():
         pygame.draw.rect(screen, background_color, input_rect)
 
 
-        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10, 4]:
+        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10]:
             tick = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect.topleft[0], input_rect.topleft[1], 330, 175)
             if tick:
                 yes = True
@@ -420,10 +420,14 @@ def endingScreen(room):
 def playLevel(room):
     # Title of the room
 
-    title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, (255,255,255))
+    title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, black)
 
+
+    introduction = "Welcome to the {}. Listen up, you better be careful here. No one's here to protect you. I will give you guide, even though I don't want to. I'll tell you what's happening here, but in case you cannot hear me, open up your eyes and read it yourself. Good luck.".format(room.name.replace("_", " "))
+
+    # vr.textToSpeech(introduction)
     # Description of the room
-    description = small_font.render(room.description, True, black)
+    description = room.description
 
     # Input Rectangle
     rect_width = screen_width-100
@@ -433,6 +437,7 @@ def playLevel(room):
     # Input and Response
     user_input = ""
     response = ""
+    play_counter = 0
     clock = pygame.time.Clock()
 
     # Initilise the room with objects
@@ -446,15 +451,26 @@ def playLevel(room):
     print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
     while not room.success:
         screen.fill(main_theme_color)
+
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
-        screen.blit(description, ((screen_width-description.get_width())/2, 70 + title_text.get_height()))
+        if response == "":
+
+            blit_text(screen, description, (50,200), medium_font, black)
+            if play_counter == 0:
+                vr.textToSpeech(description)
+                play_counter+=1
+
+        mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 30, 30)
+        redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
+
+
+        if mic :
+            user_input = vr.recogniseSpeech()
+
+        if redo:
+            user_input = ""
 
         for event in pygame.event.get():
-            # if event.type == pygame.QUIT:
-            #     pygame.quit()
-            #     sys.exit()
-
-            #TODO: is there a way to switch between voice and keyboard more freely?
             if event.type == pygame.MOUSEBUTTONDOWN:
                 (mouse_x, mouse_y) = pygame.mouse.get_pos()
                 if input_rect.collidepoint(mouse_x, mouse_y):
@@ -471,17 +487,28 @@ def playLevel(room):
                         response = processAction(room,input)
 
                     user_input = ""
+                    play_counter = 1
 
                 else:
                     user_input +=event.unicode
-        
+    
         pygame.draw.rect(screen, background_color, input_rect)
-        text_surface = medium_font.render(user_input, True, (255, 0, 255))
-        screen.blit(text_surface,input_rect.topleft)
+        # text_surface = medium_font.render(user_input, True, (255, 0, 255))
+        # screen.blit(text_surface,input_rect.topleft)
+
+        blit_text(screen, user_input, (input_rect.topleft[0]+10, input_rect.topleft[1]+10), medium_font, (255,0,255))
+        
+        blit_text(screen, response, (50,200), medium_font, black)
+        if response != "":
+            description = ""
+            if play_counter == 1:
+                vr.textToSpeech(response)
+                play_counter += 1
 
         
-        response_text = medium_font.render(response, True, (255,0,0))
-        screen.blit(response_text, (100,200))
+        # response_text = small_font.render(response, True, (255,0,0))
+        # screen.blit(response_text, (100,200))
+
 
         pygame.display.flip()
         clock.tick(60)
