@@ -81,7 +81,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
     # user_input = input(prompt)
     print("Said yes ", state)
     if state == States.UPDATE_STORED_ITEM.value:
-        if not (vr.sentenceSimilarity(extra_input, "no") > 0.9):
+        if extra_input == "yes":
             print("Stored: ", stored_type)
 
             if "unlock" in action or "lock" in action:
@@ -108,7 +108,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         #item didnt existed at all
         if not stored_type:
             # Giving Description to the object
-            prompt = "Maybe try giving me a short description about the item? It is locked? Does it give any hint about other objects? Or does it contains something else?".format(object)
+            prompt = "Maybe try giving me a short description about the item? Is it locked? Does it give any hint about other objects? Or does it contains something else?".format(object)
             return (state, (prompt, False), ())
 
         elif stored_type != type: #was initialised as normal item but its an unlock item
@@ -180,7 +180,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
     print(state)
     if state == States.ASK_FOR_UNLOCK_ITEM.value:
         print("Check if is password or not")
-        if vr.sentenceSimilarity("no", extra_input) > 0.9:
+        if extra_input == "no" > 0.9:
             print("Filling in the unlock")
             return (States.FILL_IN_UNLOCK_ITEM.value-2, (states_dict[States.FILL_IN_UNLOCK_ITEM], False), {})
         else:
@@ -314,7 +314,7 @@ def startGenerator(state, user_input):
                     return States.ADD_MORE.value, states_dict[States.ADD_MORE], finished
 
                 if state == States.ADD_MORE.value:
-                    if vr.sentenceSimilarity(user_input, "no") > 0.9:
+                    if user_input == "no":
                         finished = True
                         return state+1, states_dict[States.FINISHED], finished
                     else:

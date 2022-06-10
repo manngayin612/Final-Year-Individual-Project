@@ -1,5 +1,6 @@
 from random import randrange
 from tkinter import Y
+from tkinter.messagebox import YES
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem
@@ -53,6 +54,8 @@ button_font = pygame.font.SysFont("Rockwell", 20)
 white = (255, 255, 255)
 black = (0,0,0)
 main_theme_color = (255,255,255)
+second_theme_color = (19, 38,47)
+background_color = (235, 239, 191)
 
 
 
@@ -202,16 +205,18 @@ def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     buttontext = button_font.render(text, True, white)
     screen.blit(buttontext, (bg_rect[0]+(width-buttontext.get_width())/2, bg_rect[1]+(height-buttontext.get_height())))
     
-def create_image_button(image, x, y):
+def create_image_button(image, x, y, width, height):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed(3)
 
     img = pygame.image.load(image)
+    img = pygame.transform.scale(img, (width, height))
 
     bg_rect = pygame.Rect(x,y,img.get_width(),img.get_height())
     pygame.draw.rect(screen, main_theme_color, bg_rect)
     
     if x + img.get_width() > mouse[0] > x and y + img.get_height() > mouse[1] > y:
+        print("clicked")
         if click[0] == 1:
             return True
     screen.blit(img, bg_rect)
@@ -244,8 +249,8 @@ def titleScreen():
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, black, (255,255,0), medium_font)
-        create = create_button("Create Room", ((screen_width-125)/2), (screen_height+50)/2, 125, 35, black, (255,255,0), medium_font)
+        start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, black, second_theme_color, medium_font)
+        create = create_button("Create Room", ((screen_width-125)/2), (screen_height+50)/2, 125, 35, black, second_theme_color, medium_font)
 
         if start:
             playLevel(rooms[0])
@@ -288,12 +293,13 @@ def createRoom():
 
     user_input = ""
     response = ""
+    yes = False
+    no = False
 
     play_counter = 0
     
     finished = False
     while not finished:
-        print("enter while loop")
         screen.fill(main_theme_color)
         if response == "":
             # screen.blit(title_text, (50, 200))
@@ -302,16 +308,18 @@ def createRoom():
                 # read_aloud()
                 vr.textToSpeech(states_dict[States(state)])
                 play_counter += 1
-        print(finished)
             
-        mic = create_image_button("./images/microphone.jpeg", screen_width-250, screen_height-100)
+        mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 30, 30)
         redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
+
 
         if mic :
             user_input = vr.recogniseSpeech()
 
         if redo:
             user_input = ""
+
+
         for event in pygame.event.get():
             # if event.type == pygame.QUIT:
             #     pygame.quit()
@@ -321,13 +329,46 @@ def createRoom():
                     user_input = user_input[:-1]
                 elif event.key == pygame.K_RETURN:
                     current_state, response, finished = rg.startGenerator(state, user_input)
+                    print(current_state)
+                    user_input = ""
+                    
                     state = current_state
                     play_counter = 1
-                    user_input = ""
+
                 else:
                     user_input +=event.unicode
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                print("clicked mouse")
+                if yes:
+                    print("tickkkkk")
+                    current_state, response, finished = rg.startGenerator(state, "yes")
+                if no:
+                    print("noooo")
+                    current_state, response, finished = rg.startGenerator(state, "no")
+                user_input = ""
+                yes = False
+                no = False
+                
+                state = current_state
+                play_counter = 1
+
+
+
+        pygame.draw.rect(screen, background_color, input_rect)
+
+
+        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10, 4]:
+            tick = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect.topleft[0], input_rect.topleft[1], 330, 175)
+            if tick:
+                yes = True
+                no = False
+            cross = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect.topright[0]/2, input_rect.topleft[1], 330,175)
+            if cross:
+                no = True
+                yes = False
+
+
         
-        pygame.draw.rect(screen, (255,255,0), input_rect)
 
         blit_text(screen, user_input, input_rect.topleft, medium_font, (255,0,255))
         # text_surface = medium_font.render(user_input, True, (255, 0, 255))
@@ -343,6 +384,8 @@ def createRoom():
         # screen.blit(response_text, (50,200))
 
         pygame.display.flip()
+    print("end of loop")
+    titleScreen()
 
 
 
@@ -432,7 +475,7 @@ def playLevel(room):
                 else:
                     user_input +=event.unicode
         
-        pygame.draw.rect(screen, (255,255,0), input_rect)
+        pygame.draw.rect(screen, background_color, input_rect)
         text_surface = medium_font.render(user_input, True, (255, 0, 255))
         screen.blit(text_surface,input_rect.topleft)
 

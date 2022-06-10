@@ -46,19 +46,15 @@ def recogniseSpeech():
 
 
 def textToSpeech(text):
-
     engine = pyttsx3.init()
     engine.setProperty('voice', "com.apple.speech.synthesis.voice.daniel")
-    engine.setProperty("rate", 140)
+    engine.setProperty("rate", 200) 
 
     engine.say(text, 'speech.mp3')
-    print("saved to file")
     engine.runAndWait()
     print("run and wait")
     engine.stop()
 
-    # tts = gTTS(text)
-    # tts.save('speech.wav')
 
 
 def identifyActionsAndObjects(nlp, speech):
