@@ -1,4 +1,5 @@
 from Item import CombinableItem, Item, NumberLock, UnlockItem
+debug = False
 
 class Room:
 
@@ -42,23 +43,26 @@ class Room:
         for row in list_of_items:
             # create the items first
             (type, item, item_def, actions, description, unlock_msg ,required_items ,unlock_action ,combine_with ,finished_item ) = row
-            print("Initialising room:, ", actions)
+            # print("type: {}, item: {}, item_def: {}, action: {}, description: {}, unlock_msg: {}, required: {}, unlock_action: {}".format(type, item, item_def, actions, description, unlock_msg, required_items, unlock_action))
+            if debug: print("Initialising room:, ", actions)
             if type == "normal":
-                item = Item(item, item_def, actions, description)
+                item = Item(item, item_def=item_def, actions=actions, description=description)
             elif type =="unlock":
-                item = UnlockItem(item, item_def, unlock_msg=unlock_msg, required_items=required_items, actions=actions, unlock_action=unlock_action, description=description)
+                item = UnlockItem(item, item_def=item_def, unlock_msg=unlock_msg, required_items=required_items, actions=actions, unlock_action=unlock_action, description=description)
             elif type =="numberlock":
-                item = NumberLock(item, required_items, item_def, actions=actions, description=description, unlock_msg=unlock_msg)
+                item = NumberLock(item, password=required_items, item_def=item_def, actions=actions, description=description, unlock_msg=unlock_msg)
             elif type == "combine":
-                item = CombinableItem(item, item_def, combine_with=combine_with, finished_item=finished_item, actions=actions, description=description)
+                item = CombinableItem(item, item_def=item_def, combine_with=combine_with, finished_item=finished_item, actions=actions, description=description)
 
             self.addItem(item)
-        print(self.currentItems)
-        print(self.items_in_room)
+        if debug: print(self.currentItems)
+        if debug: 
+            for i in self.items_in_room:
+                print(i.getItemDef())
 
     def succeedCondition(self):
         self.success = self.getItem(self.succeed_item).success
-        print(self.success)
+        if debug: print(self.success)
         return self.success        
 
 
@@ -80,7 +84,7 @@ class Room:
 #         table = Item("table", item_def="table.n.02",  description="There is a box on the table.")
 #         # padlock = NumberLock("padlock", password="1234",item_def="padlock.n.01", description="It is a four digit lock." )
 #         self.items_in_room= [key, door, box, table]
-#         print("First Room Created!")
+#         if debug: print("First Room Created!")
 
 
 #     # Check if the door is unlocked 
@@ -106,7 +110,7 @@ class Room:
 #         handle = CombinableItem("handle", "handle.n.01", "ax_head", ax, description="This is the handle of the axe.")
 #         window = UnlockItem("window", item_def="window.n.01", actions=["break"], unlock_action="break", required_items= "ax",description="The window is made of glass.", unlock_msg="You successfully escaped!")
 #         self.items_in_room=[ax_head, handle, window]
-#         print("Second Room Created!")
+#         if debug: print("Second Room Created!")
 
 
 #     # Check if the door is unlocked 

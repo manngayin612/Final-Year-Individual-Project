@@ -1,12 +1,15 @@
 import spacy 
 import VoiceRecognitionUtils as vr
-import sqlite3
+import time
+debug = False
+eval = True
 
 def ContentExtractor(text):
     nlp = spacy.load("en_core_web_sm")
     pairs = {}
     
     if text != "":
+        if eval: start_time = time.process_time()
         f = open("room_generator_log.txt", "a")
         f.write(text+".\n")
         f.close()
@@ -17,43 +20,43 @@ def ContentExtractor(text):
         # Coreference resolution
         resolved_text = vr.coreferenceResolution(nlp, log, max_dist=1)
 
-        # print("Current: ", resolved_text.split("\n"))    
+        # if debug: print("Current: ", resolved_text.split("\n"))    
         current_resolved_text = resolved_text.split("\n")[-2]
-        # current_resolved_text = text
-
-        # for token in nlp(text):
-        #     print(token, token.pos_, token.dep_)
-        
-        # text = vr.stopWordRemoval(text)
-        # print("Filtered: ", text)
+        if eval: print("Coreference Resolution: ", time.process_time() - start_time)
 
         doc = nlp(current_resolved_text)
-
-
-        # for sent in doc.sents:
-        print("Current: ",doc.text)
-        # root = vr.getRoot(nlp, sent)
-        direct_object = vr.identifySubject(nlp, doc.text.lower())
-
-        print("Noun Extracted")
-        print(set(direct_object), "\n")
-
-        actions = vr.identifyVerb(nlp, doc.text.lower())
+        if debug: print("Current: ",doc.text)
         
-        print("Verbs Extracted")
-        if len(actions) >0:
-            print(set(actions), "\n")
-        else:
-            print("No action identified\n")
+        if eval: start_time = time.process_time()
+        direct_object = vr.identifySubject(nlp, doc.text.lower())
+        if eval: print("Identify Subject ", time.process_time() - start_time)
 
+        if debug: print("Noun Extracted")
+        if debug: print(set(direct_object), "\n")
+
+        if eval: start_time = time.process_time()
+        actions = vr.identifyVerb(nlp, doc.text.lower())
+        if eval: print("Identify Verb: ", time.process_time() - start_time)
+        
+        if debug: print("Verbs Extracted")
+        if len(actions) >0:
+            if debug: print(set(actions), "\n")
+        else:
+            if debug: print("No action identified\n")
+
+        if eval: start_time = time.process_time()
         tools = vr.identifyTools(nlp, doc.text.lower())
-        print("Tools Extracted")
-        print(tools, "\n")
+        if eval: print("Identify Tools: ", time.process_time() - start_time)
+        if debug: print("Tools Extracted")
+        if debug: print(tools, "\n")
+
 
         if len(direct_object) >0:
+            if eval: start_time = time.process_time()
             pairs = vr.matchObjectWithAction(pairs, nlp, doc.text, direct_object, actions, tools) 
+            if eval: print("Match object with action: ", time.process_time() - start_time)
 
-        print("\n")
+        if debug: print("\n")
     return pairs
 
 

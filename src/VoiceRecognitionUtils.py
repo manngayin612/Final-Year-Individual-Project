@@ -17,10 +17,14 @@ from gtts import gTTS
 
 from nltk.corpus import wordnet as wn
 
+
 # from spacy import displacy
 
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
+import time
 
+debug = False
+eval = True
 
 def recogniseSpeech():
 
@@ -28,21 +32,24 @@ def recogniseSpeech():
 
     # Get audio from microphone
     with sr.Microphone() as source:
-        print("Recording voice...")
+        if debug: print("Recording voice...")
         audio = r.listen(source,timeout=8,phrase_time_limit=8)
 
     # Recognise Speech by Google Speech Recognition
     try:
         # for testing purposes, we're just using the default API key
         # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-        # instead of `r.recognize_google(audio)`
+        # instead of `r.recognize_google(audio)
+        if eval:start_time =  time.process_time()
         speech = r.recognize_google(audio)
-        print("Result of Google Speech Recognition: {}".format(speech))
+        if eval: print("Speech-to-Text: ", time.process_time() - start_time)
+
+        if debug: print("Result of Google Speech Recognition: {}".format(speech))
         return speech
     except sr.UnknownValueError:
-        print("Google Speech Recognition could not understand audio")
+        if debug: print("Google Speech Recognition could not understand audio")
     except sr.RequestError as e:
-        print("Could not request results from Googlse Speech Recognition service; {0}".format(e))
+        if debug: print("Could not request results from Googlse Speech Recognition service; {0}".format(e))
 
 
 def textToSpeech(text):
@@ -52,13 +59,13 @@ def textToSpeech(text):
 
     engine.say(text, 'speech.mp3')
     engine.runAndWait()
-    print("run and wait")
+    if debug: print("run and wait")
     engine.stop()
 
 
 
 def identifyActionsAndObjects(nlp, speech):
-    # print("DETAILS OF SPEECH")
+    # if debug: print("DETAILS OF SPEECH")
     # for token in speech:
     
     action = ""
@@ -71,8 +78,8 @@ def identifyActionsAndObjects(nlp, speech):
     temp = ()
     speech = nlp(speech)
     for token in speech:
-        print(token.text, token.pos_, token.dep_, token.head.text)
-        # print(action, direct_object, indirect_object)
+        if debug: print(token.text, token.pos_, token.dep_, token.head.text)
+        # if debug: print(action, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             # action.append(token.text)
             action = token.text
@@ -103,7 +110,7 @@ def identifyActionsAndObjects(nlp, speech):
                 temp = (token.head.text, token.head.dep_)
         else:
             continue
-    print("action: ", action,"direct object: ", direct_object, "tool: ",indirect_object)
+    if debug: print("action: ", action,"direct object: ", direct_object, "tool: ",indirect_object)
     
         
     inputs.append(Input(action, direct_object, tool=indirect_object, password=password))
@@ -168,7 +175,7 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
     temp_tools = []
 
     for token in doc:
-        # print(token.text,token.dep_, token.head.head.lemma_)
+        # if debug: print(token.text,token.dep_, token.head.head.lemma_)
 
         if str(token) in nouns:
             matches[token.lemma_] = ([],"")
@@ -211,7 +218,7 @@ def findLongestSpan(nlp, doc, matches):
                     longest_span = (match_id, prev_start, end)
                 else:
                     if getSpanText(doc, longest_span[1], longest_span[2]) not in new_matches:
-                        # print("Add {} to new_matches".format(longest_span))
+                        # if debug: print("Add {} to new_matches".format(longest_span))
                         new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
                     new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
                     longest_span = (match_id, start, end)
@@ -226,7 +233,7 @@ def sentenceSimilarity(sent1, sent2):
     # sentences = ['you escaped', 'where is the key', 'there is a key inside', 'bye', 'you are free now', 'there is a new room waiting for you']
     sentence_embeddings = model.encode(sentences)
     similarity = util.pytorch_cos_sim(sentence_embeddings[0], sentence_embeddings[1])
-    print(similarity)
+    if debug: print(similarity)
     return similarity
 
 
@@ -262,23 +269,32 @@ def processSpeech(input):
     with open("user_input_log.txt", "r") as f:
         log = f.read()
 
+
+    if eval: start_time = time.process_time()
     resolved = coreferenceResolution(nlp, log, max_dist=1)
     current_input = resolved.split("\n")[-2]
 
-    print("Result from crefernceREsolution",current_input)
+    if eval: print("Coreference Resolution: ", time.process_time() - start_time)
+    if debug: print("Result from crefernceREsolution",current_input)
 
-
+    if eval: start_time = time.process_time()
     inputs = identifyActionsAndObjects(nlp, current_input)
-    print("Input result from identifyActionsAndObjects: ", inputs)
-    # print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
+    if eval: print("Identify object, action and tools: ", time.process_time() - start_time)
+
+    if debug: print("Input result from identifyActionsAndObjects: ", inputs)
+    # if debug: print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
 
     # zipped = zip(action, direct_object, password)
     return inputs
 
 def isSimilarWord(stored_word, input_word):
+    if eval: start_time = time.process_time()
+
     synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.VERB)])
     hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.VERB) for h in ss.hypernyms()])
-    print(synonyms, hypernyms)
+    if eval: print("Search synonyms and hypernuyms of action: ", time.process_time() - start_time)
+    if debug: print(synonyms, hypernyms)
+    
     return input_word in synonyms or input_word in hypernyms
 
     
@@ -287,5 +303,5 @@ def generateResponse(res):
     num_return_sequences = 20
     responses = ChatGenerator.get_response(res,num_return_sequences,num_beams)
     index = randrange(len(responses))
-    print(res, "--", responses[index])
+    if debug: print(res, "--", responses[index])
     return responses[index]

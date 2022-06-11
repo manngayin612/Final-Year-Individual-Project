@@ -1,8 +1,7 @@
-from os import unlink
-from telnetlib import STATUS
+
 import VoiceRecognitionUtils as vr
 
-
+debug = False
 class Item:
 
     def __init__(self, name, item_def, actions=[], description="blablabla"):
@@ -41,7 +40,7 @@ class Item:
             else:
                 msg+= "What do you want to do?"
 
-        return vr.generateResponse(msg)
+        return msg
 
     def isRoomObject(self, room, input):
         return input in room.currentItems
@@ -80,13 +79,14 @@ class UnlockItem(Item):
         else:
             msg += "What do you want to do?"
         
-        return vr.generateResponse(msg)
+        return msg
 
 # Items that need password to unlock
 class NumberLock(UnlockItem):
     def __init__ (self, name, password, item_def, required_items="password", actions=["unlock"], description="blablabla", unlock_msg="You have got the correct password"):
         super().__init__(name, unlock_msg, item_def, required_items=required_items, actions=actions, description=description,)
         self.password = password
+        self.item_def = item_def
 
     
     def unlockNumberLock(self, input):
@@ -109,7 +109,7 @@ class NumberLock(UnlockItem):
         else:
             msg += "What do you want to do?"
         
-        return vr.generateResponse(msg)
+        return msg
 
 class CombinableItem(Item):
     def __init__(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description=""):
@@ -132,14 +132,14 @@ class CombinableItem(Item):
             room.items_in_room.append(self.finished_item)
             room.items_in_room.remove(self)
             room.items_in_room.remove(component)
-            print("Bag: {}, CurrentItems: {}".format(room.bag, room.currentItems))
-            return vr.generateResponse("You have successfully combined {} and {}. You got a new {}".format(self.getName(), component, self.finished_item.getName()))
+            if debug: print("Bag: {}, CurrentItems: {}".format(room.bag, room.currentItems))
+            return "You have successfully combined {} and {}. You got a new {}".format(self.getName(), component, self.finished_item.getName())
         else:
-            return vr.generateResponse("You cannot combine {} with {}.".format(self.getName(), component))
+            return "You cannot combine {} with {}.".format(self.getName(), component)
         
 
     def performAction(self, room, input):
-        print(input.tool)
+        if debug: print(input.tool)
         msg = ""
         if input.action == "investigate":
             msg += self.getDescription()
@@ -157,7 +157,7 @@ class CombinableItem(Item):
                     msg+="You have some missing pieces."
         else:
             msg += "What do you want to do?"
-        return vr.generateResponse(msg)
+        return msg
 
         
 
