@@ -9,6 +9,7 @@ def ContentExtractor(text):
     pairs = {}
     
     if text != "":
+        text = text +"."
         if eval: start_time = time.process_time()
         f = open("room_generator_log.txt", "a")
         f.write(text+".\n")

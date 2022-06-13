@@ -84,9 +84,8 @@ class UnlockItem(Item):
 # Items that need password to unlock
 class NumberLock(UnlockItem):
     def __init__ (self, name, password, item_def, required_items="password", actions=["unlock"], description="blablabla", unlock_msg="You have got the correct password"):
-        super().__init__(name, unlock_msg, item_def, required_items=required_items, actions=actions, description=description,)
+        super().__init__(name, item_def, unlock_msg, required_items=required_items, actions=actions, description=description,)
         self.password = password
-        self.item_def = item_def
 
     
     def unlockNumberLock(self, input):

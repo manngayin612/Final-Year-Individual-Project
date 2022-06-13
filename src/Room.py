@@ -43,7 +43,6 @@ class Room:
         for row in list_of_items:
             # create the items first
             (type, item, item_def, actions, description, unlock_msg ,required_items ,unlock_action ,combine_with ,finished_item ) = row
-            # print("type: {}, item: {}, item_def: {}, action: {}, description: {}, unlock_msg: {}, required: {}, unlock_action: {}".format(type, item, item_def, actions, description, unlock_msg, required_items, unlock_action))
             if debug: print("Initialising room:, ", actions)
             if type == "normal":
                 item = Item(item, item_def=item_def, actions=actions, description=description)

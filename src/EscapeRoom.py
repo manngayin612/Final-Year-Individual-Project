@@ -87,7 +87,7 @@ def initialiseGame():
 
 def identifyObject(room, item):
     if item == "":
-        return "Which object are you interacting with?"
+        return "I am not sure which item are you referring to, can you try again?"
 
     #Check cache first=
     if eval: start_time = time.process_time()
@@ -105,31 +105,40 @@ def identifyObject(room, item):
         max_wup = 0
         matching_obj_index = -1
         for i in range(len(room.items_in_room)):
-            for ss in wn.synsets(item, pos=wn.NOUN):
-                if(ss.name().split(".")[0] == item):
-                    # Check synonyms
-                    if debug: print(ss.name(), room.items_in_room[i].getItemDef())
-                    current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
-                    # Check hypernyms
-                    wup = ss.wup_similarity(wn.synset(room.items_in_room[i].getItemDef()))
 
-                    if current_similarity > max_similarity or wup > max_wup:
-                        max_similarity = current_similarity
-                        max_wup = wup
-                        matching_obj_index = i
-        
-        identified_obj = room.items_in_room[matching_obj_index]
+            if vr.isSimilarWord(room.items_in_room[i].getName(), item, "n"):
+                if debug: print(item, room.items_in_room[i].getName(), {"found in synonyms or hypernyms"})
+                writeToCache(room.items_in_room[i].getName(), item)
+                return room.items_in_room[i]
+            else:
+
+                for ss in wn.synsets(item, pos=wn.NOUN):
+                    if(ss.name().split(".")[0] == item):
+                        # Check similarity
+                        if debug: print(ss.name(), room.items_in_room[i].getItemDef())
+                        current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
+                        if debug: print("similarity check: ", room.items_in_room[i], current_similarity)
+                        if current_similarity > max_similarity :
+                            max_similarity = current_similarity
+
+                            matching_obj_index = i
+            
+                identified_obj = room.items_in_room[matching_obj_index]
+                
         if debug: print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
-        writeToCache(identified_obj.getName(), item)
         if eval: print("Computing Similarity for object: ", time.process_time() - start_time)
+        if max_similarity > 1.8:
+            writeToCache(identified_obj.getName(), item)
+            return identified_obj
+        else:
+            return "{} is not found in the room".format(item)
 
-        return identified_obj if (max_similarity > 3 or max_wup > 0.9 ) else vr.generateResponse("{} is not found in the room.".format(item))
 
 
 def identifyAction(action, item):
     # Check in Cache
     if action == "":
-        action = input("Which action do you want to perform? {}".format(item.getActions()))
+        return ""
 
     if eval: start_time = time.process_time()
     actionFromCache = searchCache(action)
@@ -148,7 +157,7 @@ def identifyAction(action, item):
         for assigned_action in item.getActions():
             
             if eval: start_time = time.process_time()
-            if vr.isSimilarWord(assigned_action, action):
+            if vr.isSimilarWord(assigned_action, action,"v"):
                 if debug: print("Found in Synonyms or Hypernyms")
                 return assigned_action
             else:
@@ -162,32 +171,43 @@ def identifyAction(action, item):
                             matching_action = assigned_action
                 if eval: print("Calculate similarity for action: ", time.process_time() - start_time)
         if debug: print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
-        writeToCache(matching_action, action)
-        return matching_action if max_similarity > threshold else "I don't think you can do this."
+        if max_similarity > threshold:
+            writeToCache(matching_action, action)
+            return matching_action
+        else:
+            ""
 
 
 def processAction(room, processed_input):
     msg = ""
     # for (action, direct_object, pw) in actions_dobjects_pw:
     if eval : start_time = time.process_time()
-    processed_input.item = identifyObject(room, processed_input.item)
+    identified_item = identifyObject(room, processed_input.item)
+    if isinstance(identified_item, str):
+        return identified_item
+    else:
+        processed_input.item = identified_item
     if eval: print("Match input object to room object: ", time.process_time() - start_time)
 
     
     if debug: print("Processed_input item in processAction()", processed_input.item.getActions())
+    if eval : start_time = time.process_time()
     
     if processed_input.tool != "":
         processed_input.tool = identifyObject(room, processed_input.tool)
         if debug: print("Processed_input tools ", processed_input.tool.getName())
 
-    if eval : start_time = time.process_time()
-    processed_input.action = identifyAction(processed_input.action, processed_input.item)
-    if eval: print("Match input action with available action: ", time.process_time() - start_time)
+    identified_action = identifyAction(processed_input.action, processed_input.item)
+    if identified_action == "":
+        return "Can you try again specifying the action you want to perform?"
+    else:
+        processed_input.action = identified_action
+
     if debug: print(processed_input.action)
 
-    if eval: start_time = time.process_time()
     result = processed_input.item.performAction(room , processed_input)
-    if eval: print("Perform action: ", time.process_time() - start_time)
+
+    if eval: print("Perform matched action: ", time.process_time() - start_time)
     return result
 
     
@@ -293,7 +313,7 @@ def read_aloud():
 
 def createRoom():
     
-    os.remove("escaperoom.sqlite")
+    # os.remove("escaperoom.sqlite")
     if eval: start_time = time.process_time()
     state = States.NAME_ROOM.value
     title_text = states_dict[States(state)]
@@ -328,7 +348,7 @@ def createRoom():
             blit_text(screen, title_text, (50,200), medium_font, black)
             if (play_counter == 0):
                 # read_aloud()
-                vr.textToSpeech(vr.generateResponse(states_dict[States(state)]))
+                vr.textToSpeech(states_dict[States(state)])
                 play_counter += 1
             
         mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 30, 30)
@@ -358,22 +378,27 @@ def createRoom():
                     user_input +=event.unicode
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 (x, y) = event.pos
-                print(tick_img)
-                print(tick_img.collidepoint(x,y))
+
                 if tick_img:
-                    if tick_img.collidepoint(x,y):
-                        yes = "yes"
-                if cross_img:
+                    if tick_img.collidepoint(x,y) and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10]:
+                        current_state, response, finished = rg.startGenerator(state, "yes")
+                        state = current_state
+                        play_counter = 1
+                        
+                if cross_img and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10]:
                     if cross_img.collidepoint(x,y):
-                        yes = "no"
+                        current_state, response, finished = rg.startGenerator(state, "no")
+                        state = current_state
+                        play_counter = 1
+                
+
                 if mic.collidepoint(x,y):
                     user_input = vr.recogniseSpeech()
-                if debug: print("pressed: ", yes)
-                current_state, response, finished = rg.startGenerator(state, yes)
-                user_input = ""
-                yes = ""
-                state = current_state
-                play_counter = 1
+                    print(user_input)
+                    if user_input is None:
+                        user_input = ""
+                        response = "I can't hear you, can you try again?"
+    
 
         pygame.draw.rect(screen, background_color, input_rect)
 
@@ -404,7 +429,7 @@ def playLevel(room):
 
     introduction = "Welcome to the {}. Listen up, you better be careful here. No one's here to protect you. I will give you guide, even though I don't want to. I'll tell you what's happening here, but in case you cannot hear me, open up your eyes and read it yourself. Good luck.".format(room.name.replace("_", " "))
 
-    vr.textToSpeech(vr.generateResponse(introduction))
+    vr.textToSpeech(introduction)
 
     description = room.description
 
@@ -427,6 +452,7 @@ def playLevel(room):
     result = cur.execute(select_all).fetchall()
     
     if debug: print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
+    if eval: start_game = time.process_time()
     while not room.success:
         
         screen.fill(main_theme_color)
@@ -494,7 +520,9 @@ def playLevel(room):
 
         pygame.display.flip()
         clock.tick(60)
+        room.success = room.succeedCondition()
     #TODO
+    if eval: print("GAME PLAY: ", time.process_time() - start_game)
     if debug: print("Finished Room")
         
 
