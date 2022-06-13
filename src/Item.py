@@ -31,11 +31,14 @@ class Item:
         msg = ""
         if input.action!="":
             if input.action == "get":
-                room.bag.append(self.getName())
-                room.currentItems.remove(self.getName())
-                msg += "You have got {} in your bag.".format(self.getName())
+                if self.getName() in room.bag:
+                    msg += "You already have a {} in your bag. You cannot pick it up twice.".format(self.getName())
+                else:
+                    room.bag.append(self.getName())
+                    room.currentItems.remove(self.getName())
+                    msg += "You have got {} in your bag.".format(self.getName())
 
-            elif input.action == "investigate":
+            elif input.action == "investigate" or input.action in self.actions:
                 msg+= self.getDescription()
             else:
                 msg+= "What do you want to do?"
@@ -76,6 +79,8 @@ class UnlockItem(Item):
                 self.success = True
             else: 
                 msg += "You might missed something like a {}".format(self.required_items)
+        elif input.action in self.actions:
+            msg += self.getDescription()
         else:
             msg += "What do you want to do?"
         
@@ -105,6 +110,8 @@ class NumberLock(UnlockItem):
                     msg += self.unlock_message
                 else: 
                     msg += "I don't think it is correct."
+        elif input.action in self.actions:
+            msg += self.getDescription()
         else:
             msg += "What do you want to do?"
         
@@ -143,9 +150,12 @@ class CombinableItem(Item):
         if input.action == "investigate":
             msg += self.getDescription()
         elif input.action == "get":
-            room.bag.append(self.getName())
-            room.currentItems.remove(self.getName())
-            msg += "You have got {} in your bag.".format(self.getName())
+            if self.getName() in room.bag:
+                msg += "You have already pick up the {}. You cannot pick it up again.".format(self.getName())
+            else:
+                room.bag.append(self.getName())
+                room.currentItems.remove(self.getName())
+                msg += "You have got {} in your bag.".format(self.getName())
         elif input.action == "combine":
             if input.tool == "" :
                 msg+="What do you want to combine with {}".format(self.getName())
@@ -154,6 +164,8 @@ class CombinableItem(Item):
                     msg+=self.combineWith(room, input.tool)
                 else:
                     msg+="You have some missing pieces."
+        elif input.action in self.actions:
+            msg+= self.getDescription()
         else:
             msg += "What do you want to do?"
         return msg

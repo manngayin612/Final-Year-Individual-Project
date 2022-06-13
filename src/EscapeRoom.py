@@ -34,7 +34,7 @@ rooms=[]
 
 debug = False
 eval = True
-room_to_play = "./room_database/smallroom.sqlite"
+room_to_play = "escaperoom.sqlite"
 
 
 #Initialising the game screen
@@ -499,6 +499,9 @@ def playLevel(room):
 
                 if mic.collidepoint(x,y):
                     user_input  = vr.recogniseSpeech()
+                    if user_input is None:
+                        user_input == ""
+                        response = "I can't hear you, can you try again?"
     
         pygame.draw.rect(screen, background_color, input_rect)
         # text_surface = medium_font.render(user_input, True, (255, 0, 255))

@@ -217,7 +217,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
     if state == States.CONGRATS_MSG.value:
         if debug: print("unlock_msg: ", extra_input)
         unlock_msg = extra_input
-        escaped_prob = vr.sentenceSimilarity(unlock_msg, "You escaped.")
+        escaped_prob = vr.sentenceSimilarity(unlock_msg, "Congratulation! You escaped.")
         if debug: print(escaped_prob)
         if escaped_prob > 0.7:
             if debug: print("{} is the escape item".format(item))
