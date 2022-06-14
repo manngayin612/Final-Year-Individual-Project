@@ -1,7 +1,4 @@
-from random import randrange
-from tkinter import Y
-from tkinter.messagebox import YES
-from tracemalloc import start
+
 from py import process
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem
@@ -500,7 +497,7 @@ def playLevel(room):
                 if mic.collidepoint(x,y):
                     user_input  = vr.recogniseSpeech()
                     if user_input is None:
-                        user_input == ""
+                        user_input = ""
                         response = "I can't hear you, can you try again?"
     
         pygame.draw.rect(screen, background_color, input_rect)
