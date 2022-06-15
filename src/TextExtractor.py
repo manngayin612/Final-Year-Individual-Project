@@ -30,7 +30,7 @@ def ContentExtractor(text):
         
         if eval: start_time = time.process_time()
         direct_object = vr.identifySubject(nlp, doc.text.lower())
-        if eval: print("Identify Subject ", time.process_time() - start_time)
+        if eval: print("Identify Subject: ", time.process_time() - start_time)
 
         if debug: print("Noun Extracted")
         if debug: print(set(direct_object), "\n")

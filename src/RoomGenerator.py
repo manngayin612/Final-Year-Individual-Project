@@ -1,5 +1,6 @@
 
 import sqlite3
+from regex import P
 
 from setuptools import Require
 import TextExtractor as te
@@ -12,8 +13,8 @@ import VoiceRecognitionUtils as vr
 from States import States, states_dict
 
 import time
-debug = False
-eval = True
+debug = True
+eval = False
 
 
 # Normal items: name, item_def, actions, description
@@ -78,15 +79,18 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             stored_type = itemExisted(cur, room_name,  item)
             if not stored_type:
                 prompt = "Are you trying to add \"{}\" into the room?".format(item)
+            elif stored_type != type and stored_type == "normal":
+                prompt = "Are you turning a {} item, {}, into a {} item?".format(stored_type, item, type)
             else:
-                prompt = "Is this updates to the \"{}\"?".format(item)
+                prompt = "Are you updating the {} item, the {}?".format(stored_type, item)
             states_dict[States.UPDATE_STORED_ITEM] = prompt
             return (state, (prompt, False),())
 
-    # user_input = input(prompt)
+
+
     if debug: print("Said yes ", state)
     if state == States.UPDATE_STORED_ITEM.value:
-        print("Update stored item ",extra_input)
+
         if extra_input == "yes":
             if debug: print("Stored: ", stored_type)
 
@@ -110,14 +114,18 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             stored_action = cur.execute(action_query, (object,)).fetchone()
             if debug: print(stored_action)
 
+
             stored_type = itemExisted(cur, room_name,  item)
             #item didnt existed at all
             if not stored_type:
                 # Giving Description to the object
-                prompt = "Maybe try giving me a short description about the item? Is it locked? Does it give any hint about other objects? Or does it contains something else?".format(object)
+                prompt = "Maybe try giving me a short description about the {}? Is it locked? Does it give any hint about other objects? Or does it contains something else?".format(object)
+                print("description: ", state)
                 return (state, (prompt, False), ())
 
             elif stored_type != type: #was initialised as normal item but its an unlock item
+                if type == "normal":
+                    type = stored_type
                 if debug: print("Please update")
                 update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
                 if debug: print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
@@ -125,7 +133,12 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             else:
                 if debug: print("got this already")
 
-    if debug: print("Before creating new item: ", state, extra_input)
+        else:
+            queue.popleft()    
+            return (States.INPUT_PROCESS.value,(),(description, queue))
+            
+
+    if debug: print("Before creating new item: ", state, extra_input, stored_type)
     if state == States.CREATE_NEW_ITEMS.value and not stored_type:
         description = extra_input
         if debug: print("Description: ",description)
@@ -137,9 +150,11 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         cur.execute(insert_object, (type, item, item_def, a, description, required_item, unlock_msg, unlock_action, combine_with, finished_item ))    
         if debug: print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
 
+
             
 
-    if debug: print("Check if all fields are completed.")
+    if debug: print("Check if all fields are completed. {} {}".format(item, type))
+
     state, change_state, new_pairs = isEntryCompleted(state+1, cur,room_name, item, type, extra_input)
     if change_state:
         prompt, _  = change_state
@@ -165,6 +180,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
     global required_item, unlock_action, unlock_msg
     pair = {}
     if type == "unlock":
+
         if state == States.CREATE_NEW_ITEMS.value:
             if debug: print("getting entry from database")
             get_record = """SELECT required_items, unlock_msg, unlock_action FROM {} WHERE item=? and type = ?;""".format(room_name)
@@ -174,9 +190,8 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
             required_item = row[0]
             unlock_msg = row[1]
             unlock_action = row[2]
-
+            print(required_item)
             if required_item == None:
-                # user_input = input("Do you unlock it with a password?")
                 return (States.ASK_FOR_UNLOCK_ITEM.value-2, (states_dict[States.ASK_FOR_UNLOCK_ITEM], False),{})
     else:
         if debug: print("Everything is fine")
@@ -185,12 +200,15 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
     if debug: print(state)
     if state == States.ASK_FOR_UNLOCK_ITEM.value:
         if debug: print("Check if is password or not")
+        print(extra_input)
         if extra_input == "no":
             if debug: print("Filling in the unlock")
             return (States.FILL_IN_UNLOCK_ITEM.value-2, (states_dict[States.FILL_IN_UNLOCK_ITEM], False), {})
-        else:
+        elif extra_input == "yes":
             if debug: print("filling in password")
             return (States.FILL_IN_PASSWORD.value-2, (states_dict[States.FILL_IN_PASSWORD], False), {})
+        else :
+            return (States.ASK_FOR_UNLOCK_ITEM.value -2, ("Please only answer yes or no", False), {})
     
     if debug: print("after type = unlock", state)
     if state == States.FILL_IN_UNLOCK_ITEM.value:
@@ -224,7 +242,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
             update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
             cur.execute(update_query, (item,))
     if required_item:
-        if int(required_item):
+        if required_item.isdigit():
             type = "numberlock"
     if debug: print(state, type, item, required_item)
     update_query = '''UPDATE {} SET type = ?, required_items =?, unlock_msg =?, unlock_action =? WHERE item=? '''.format(room_name)
@@ -311,8 +329,10 @@ def startGenerator(state, user_input):
                     return state, prompt, finished
                 else:
                     description_of_item, pairs_queue = new_pairs_info 
+                    if eval: start_time = time.process_time()
                     newpairs = (te.ContentExtractor(description_of_item)).items()
                     pairs_queue.extendleft(newpairs)
+                    if eval: print("Content Extractor: ", time.process_time() - start_time)
                     if debug: print("NEWPAIRS: ", pairs_queue)
                     user_input = ""
                     extra_input = ""
@@ -335,8 +355,10 @@ def startGenerator(state, user_input):
 
                 if state == States.EXTRA_ITEM.value:
                     if debug: print("added extra item", state)
+                    if eval: start_time = time.process_time()
                     newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
                     pairs_queue.extendleft(newpairs)
+                    if eval: print("Content Extractor: ", time.process_time() - start_time)
                     if debug: print("After adding Extra Item: ", pairs_queue)
                     state = States.OVERALL_DESCRIPTION.value
 

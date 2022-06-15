@@ -1,5 +1,6 @@
 
 from py import process
+from ChatGenerator import pegasus_paraphraser
 import VoiceRecognitionUtils as vr 
 from Item import CombinableItem, Item, NumberLock, UnlockItem
 from Room import Room
@@ -23,9 +24,6 @@ import time
 voice_input = False
 test = False
 
-# objects=[]
-# current_room_items = ["key", "door", "table"]
-# bag = []
 threshold = 0.2
 rooms=[]
 
@@ -35,7 +33,6 @@ room_to_play = "escaperoom.sqlite"
 
 
 #Initialising the game screen
-
 pygame.init()
 pygame.mixer.init()
 pygame.font.init()
@@ -331,7 +328,6 @@ def createRoom():
 
     user_input = ""
     response = ""
-    yes = ""
     tick_img = None
     cross_img = None
 
@@ -377,12 +373,12 @@ def createRoom():
                 (x, y) = event.pos
 
                 if tick_img:
-                    if tick_img.collidepoint(x,y) and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10]:
+                    if tick_img.collidepoint(x,y) and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, 4, States.FILL_IN_PASSWORD.value, 10]:
                         current_state, response, finished = rg.startGenerator(state, "yes")
                         state = current_state
                         play_counter = 1
                         
-                if cross_img and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10]:
+                if cross_img and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, 4, States.FILL_IN_PASSWORD.value, 10]:
                     if cross_img.collidepoint(x,y):
                         current_state, response, finished = rg.startGenerator(state, "no")
                         state = current_state
@@ -400,7 +396,7 @@ def createRoom():
         pygame.draw.rect(screen, background_color, input_rect)
 
 
-        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value-1, States.FILL_IN_PASSWORD.value,10]:
+        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.FILL_IN_PASSWORD.value, 10, 4 ]:
             tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect.topleft[0], input_rect.topleft[1], 330, 175)
             cross_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect.topright[0]/2, input_rect.topleft[1], 330,175)
 
@@ -410,7 +406,7 @@ def createRoom():
         if response != "":
             title_text = ""
             if play_counter == 1:
-                vr.textToSpeech(response)
+                vr.textToSpeech(vr.generateResponse(response))
                 play_counter += 1
 
         pygame.display.flip()
@@ -580,6 +576,12 @@ if __name__ == "__main__":
         #         response += processAction(rooms[1],i)
 
 
+        # nlp = spacy.load("en_core_web_sm")
+        # user_input = "look at the dog"
+        # doc = nlp(user_input)
+        # for t in doc:
+        #     print(t.text, t.dep_, t.pos_, t.head.text)
+
     # Check item.def
         # check_word = input("Check this word: ")
         # if debug: print(wn.synsets("pick"))
@@ -593,6 +595,9 @@ if __name__ == "__main__":
 
         # if debug: print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
         # if debug: print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
+
+
+
         state = States.NAME_ROOM.value
         user_input = "Dark Hole"
         response = ""

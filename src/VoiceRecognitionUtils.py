@@ -73,12 +73,14 @@ def identifyActionsAndObjects(nlp, speech):
     direct_object = ""
     indirect_object = ""
     password = ""
-
+    root = ""
     inputs = []
     temp = ()
     speech = nlp(speech)
     for token in speech:
         if debug: print(token.text, token.pos_, token.dep_, token.head.text)
+        if (token.dep_ == "ROOT"):
+            root = token
         # if debug: print(action, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
             # action.append(token.text)
@@ -94,6 +96,8 @@ def identifyActionsAndObjects(nlp, speech):
                         direct_object = token.text + "_" + temp[0]
                 elif token.head.pos_ != "ADP":
                     direct_object = token.text
+                # elif token.head.head == root:
+                #     direct_object = token.text
                 else:
                     indirect_object = token.text
         elif(token.pos_ == "NUM"):
