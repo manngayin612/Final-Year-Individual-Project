@@ -28,8 +28,10 @@ threshold = 0.2
 rooms=[]
 
 debug = False
-eval = True
-room_to_play = "escaperoom.sqlite"
+eval = False
+room_to_play = "./room_database/largeroom.sqlite"
+
+
 
 
 #Initialising the game screen
@@ -77,7 +79,7 @@ def initialiseGame():
         room.initialiseRoom(result)
         rooms.append(room)
     if debug: print(rooms)
-    if eval : print("Initialise Game", time.process_time()- start_time)
+    if eval : print("Initialise Game:", time.process_time()- start_time)
 
 def identifyObject(room, item):
     if item == "":
@@ -86,7 +88,7 @@ def identifyObject(room, item):
     #Check cache first=
     if eval: start_time = time.process_time()
     objectFromCache = searchCache(item)
-    if eval: print("Search Cache for object: ", time.process_time() - start_time)
+    if eval: print("Object Cache Search: ", time.process_time() - start_time)
     if objectFromCache != "":
         if debug: print("Got from Cache")
         for i in room.items_in_room:
@@ -136,7 +138,7 @@ def identifyAction(action, item):
 
     if eval: start_time = time.process_time()
     actionFromCache = searchCache(action)
-    if eval: print("Cache search for action: ", time.process_time() - start_time)
+    if eval: print("Action Cache Search: ", time.process_time() - start_time)
 
     if debug: print(actionFromCache)
     if actionFromCache != "":
@@ -148,9 +150,9 @@ def identifyAction(action, item):
 
         max_similarity = 0
         matching_action = ""
+        if eval: start_time = time.process_time()
         for assigned_action in item.getActions():
             
-            if eval: start_time = time.process_time()
             if vr.isSimilarWord(assigned_action, action,"v"):
                 if debug: print("Found in Synonyms or Hypernyms")
                 return assigned_action
@@ -163,7 +165,7 @@ def identifyAction(action, item):
                         if current_similarity > max_similarity:
                             max_similarity = current_similarity
                             matching_action = assigned_action
-                if eval: print("Calculate similarity for action: ", time.process_time() - start_time)
+        if eval: print("Calculate similarity for action: ", time.process_time() - start_time)
         if debug: print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
         if max_similarity > threshold:
             writeToCache(matching_action, action)
@@ -181,7 +183,7 @@ def processAction(room, processed_input):
         return identified_item
     else:
         processed_input.item = identified_item
-    if eval: print("Match input object to room object: ", time.process_time() - start_time)
+    if eval: print("Total Time of identifying Object: ", time.process_time() - start_time)
 
     
     if debug: print("Processed_input item in processAction()", processed_input.item.getActions())
@@ -201,25 +203,23 @@ def processAction(room, processed_input):
 
     result = processed_input.item.performAction(room , processed_input)
 
-    if eval: print("Perform matched action: ", time.process_time() - start_time)
+    if eval: print("Total Time of Identifying Actions: ", time.process_time() - start_time)
     return result
 
     
+cache_size = 5
+cache = []
 def searchCache(word):
-    with open("./cache.json", "r") as jsonFile:
-        data = json.load(jsonFile)
-        if word in data:
-            return data[word]
-        else:
-            return ""
+
+    for (new_word, stored_word) in cache:
+        if new_word == word:
+            return stored_word
+    return ""
 
 def writeToCache(word, new_word):
-    with open("./cache.json", "r") as jsonFile:
-        data = json.load(jsonFile)
-        data[new_word] = word
-    with open("./cache.json", "w") as jsonFile:
-        json.dump(data,jsonFile)
-
+    cache.insert(len(cache)-1, (new_word, word))
+    if len(cache) > cache_size:
+        cache.pop()
 
 def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
     mouse = pygame.mouse.get_pos()
@@ -450,12 +450,11 @@ def playLevel(room):
         
         screen.fill(main_theme_color)
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
-        if response == "":
 
-            blit_text(screen, description, (50,200), medium_font, black)
-            if play_counter == 0:
-                vr.textToSpeech(vr.generateResponse(description))
-                play_counter+=1
+        blit_text(screen, description, (50,200), medium_font, black)
+        if play_counter == 0:
+            vr.textToSpeech(vr.generateResponse(description))
+            play_counter+=1
 
         mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 30, 30)
         redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
@@ -464,11 +463,6 @@ def playLevel(room):
             user_input = ""
 
         for event in pygame.event.get():
-            # if event.type == pygame.MOUSEBUTTONDOWN:
-            #     (mouse_x, mouse_y) = pygame.mouse.get_pos()
-            #     if input_rect.collidepoint(mouse_x, mouse_y):
-            #         user_input = vr.recogniseSpeech()
-            
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
                     user_input = user_input[:-1]
@@ -502,9 +496,8 @@ def playLevel(room):
 
         blit_text(screen, user_input, (input_rect.topleft[0]+10, input_rect.topleft[1]+10), medium_font, (255,0,255))
         
-        blit_text(screen, response, (50,200), medium_font, black)
+        blit_text(screen, response, (50,300), medium_font, black)
         if response != "":
-            description = ""
             if play_counter == 1:
                 vr.textToSpeech(vr.generateResponse(response))
                 play_counter += 1

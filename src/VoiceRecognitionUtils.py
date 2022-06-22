@@ -23,8 +23,8 @@ from nltk.corpus import wordnet as wn
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
 import time
 
-debug = False
-eval = True
+debug = True
+eval = False
 
 def recogniseSpeech():
 
@@ -37,9 +37,6 @@ def recogniseSpeech():
 
     # Recognise Speech by Google Speech Recognition
     try:
-        # for testing purposes, we're just using the default API key
-        # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-        # instead of `r.recognize_google(audio)
         if eval:start_time =  time.process_time()
         speech = r.recognize_google(audio)
         if eval: print("Speech-to-Text: ", time.process_time() - start_time)
@@ -96,8 +93,8 @@ def identifyActionsAndObjects(nlp, speech):
                         direct_object = token.text + "_" + temp[0]
                 elif token.head.pos_ != "ADP":
                     direct_object = token.text
-                # elif token.head.head == root:
-                #     direct_object = token.text
+                elif token.head.head == root:
+                    direct_object = token.text
                 else:
                     indirect_object = token.text
         elif(token.pos_ == "NUM"):
@@ -283,7 +280,7 @@ def processSpeech(input):
 
     if eval: start_time = time.process_time()
     inputs = identifyActionsAndObjects(nlp, current_input)
-    if eval: print("Identify object, action and tools: ", time.process_time() - start_time)
+    if eval: print("Identify object, action and tools from input: ", time.process_time() - start_time)
 
     if debug: print("Input result from identifyActionsAndObjects: ", inputs)
     # if debug: print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
@@ -292,16 +289,19 @@ def processSpeech(input):
     return inputs
 
 def isSimilarWord(stored_word, input_word, pos):
-    if eval: start_time = time.process_time()
+
     if pos == "n":
         if debug: print("searching items synonyms")
+        if eval: start_time = time.process_time()
         synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.NOUN)])
         hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.NOUN) for h in ss.hypernyms()])
+        if eval: print("Search synonyms and hypernuyms of object: ", time.process_time() - start_time)
         if debug: print(synonyms, hypernyms)
     elif pos =="v":
+        if eval: start_time = time.process_time()
         synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.VERB)])
         hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.VERB) for h in ss.hypernyms()])
-    if eval: print("Search synonyms and hypernuyms of action: ", time.process_time() - start_time)
+        if eval: print("Search synonyms and hypernuyms of action: ", time.process_time() - start_time)
     if debug: print(synonyms, hypernyms)
     
     return input_word in synonyms or input_word in hypernyms

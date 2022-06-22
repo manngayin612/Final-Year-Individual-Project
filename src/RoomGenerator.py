@@ -13,7 +13,7 @@ import VoiceRecognitionUtils as vr
 from States import States, states_dict
 
 import time
-debug = True
+debug = False
 eval = False
 
 
