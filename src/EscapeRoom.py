@@ -47,17 +47,18 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Escape Room")
 
 
-font = pygame.font.SysFont("Impact", 50)
+font = pygame.font.Font("orange juice 2.0.ttf", 65)
 medium_font = pygame.font.SysFont("Courier", 20)
 small_font = pygame.font.SysFont("Courier", 15)
 
-button_font = pygame.font.SysFont("Rockwell", 20)
+button_font = pygame.font.Font("BiteBullet.ttf", 45)
 
 white = (255, 255, 255)
 black = (0,0,0)
 main_theme_color = (255,255,255)
 second_theme_color = (19, 38,47)
-background_color = (235, 239, 191)
+yellow = (249,220, 92, 50)
+red = (144, 78, 85, 30)
 
 
 
@@ -221,22 +222,22 @@ def writeToCache(word, new_word):
     if len(cache) > cache_size:
         cache.pop()
 
-def create_button(text, x, y, width, height, hovercolour, defaultcolour, font):
+def create_button(text, x, y, width, height, hovercolour):
     mouse = pygame.mouse.get_pos()
 
     click = pygame.mouse.get_pressed(3)
 
-    bg_rect = pygame.Rect(x,y,width,height)
-    pygame.draw.rect(screen, defaultcolour, bg_rect)
+    # bg_rect = pygame.Rect(x,y+50,width,10)
+    # pygame.draw.rect(screen, defaultcolour, bg_rect)
 
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
-        bg_rect = pygame.Rect(x,y,width,height)
+        bg_rect = pygame.Rect(x,y+30,width-50,8)
         pygame.draw.rect(screen, hovercolour, bg_rect)
         if click[0] == 1:
             return True
 
-    buttontext = button_font.render(text, True, white)
-    screen.blit(buttontext, (bg_rect[0]+(width-buttontext.get_width())/2, bg_rect[1]+(height-buttontext.get_height())))
+    buttontext = button_font.render(text, True, black)
+    screen.blit(buttontext, (x, y))
     
 def create_image_button(image, x, y, width, height):
     mouse = pygame.mouse.get_pos()
@@ -264,7 +265,7 @@ def blit_text(surface, text, pos, font, color=pygame.Color('black')):
         for word in line:
             word_surface = font.render(word, 0, color)
             word_width, word_height = word_surface.get_size()
-            if x + word_width >= max_width-20:
+            if x + word_width >= max_width-70:
                 x = pos[0]  # Reset the x.
                 y += word_height  # Start on new row.
             surface.blit(word_surface, (x, y))
@@ -275,15 +276,19 @@ def blit_text(surface, text, pos, font, color=pygame.Color('black')):
 
 
 def titleScreen():
-    text = font.render("Welcome to the game", True, black)
+    text = font.render("Are you ready to escape?", True, black)
+    bg_image = pygame.image.load('./images/exit.png')
+    bg_image = pygame.transform.scale(bg_image, (230, 230))
 
     while True:
+
         screen.fill(main_theme_color)
+        screen.blit(bg_image, (225,275))
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        start = create_button("Start", ((screen_width-125)/2), (screen_height-35)/2, 125, 35, black, second_theme_color, medium_font)
-        create = create_button("Create Room", ((screen_width-125)/2), (screen_height+50)/2, 125, 35, black, second_theme_color, medium_font)
+        start = create_button("Start", 50, (screen_height-35)/2, 125, 35, yellow)
+        create = create_button("Create", screen_width-150, (screen_height-35)/2, 125, 35, yellow)
 
         if start:
             playLevel(rooms[0])
@@ -316,7 +321,10 @@ def createRoom():
     # Input Rectangle
     rect_width = screen_width-100
     rect_height = screen_height/4
-    input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
+    # input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
+    input_rect = pygame.image.load("./images/speechbox.png")
+    input_rect = pygame.transform.scale(input_rect, (rect_width, rect_height))
+    input_rect_surface = input_rect.get_rect()
 
 
     file = open("room_generator_log.txt","r+")
@@ -344,13 +352,13 @@ def createRoom():
                 vr.textToSpeech(states_dict[States(state)])
                 play_counter += 1
             
-        mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 30, 30)
-        redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
+        mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 40, 40)
+        redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, red)
 
         if redo:
             user_input = ""
 
-        tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect.topleft[0], input_rect.topleft[1], 330, 175)
+     
 
         for event in pygame.event.get():
             # if event.type == pygame.QUIT:
@@ -378,6 +386,7 @@ def createRoom():
                         state = current_state
                         play_counter = 1
                         
+                        
                 if cross_img and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, 4, States.FILL_IN_PASSWORD.value, 10]:
                     if cross_img.collidepoint(x,y):
                         current_state, response, finished = rg.startGenerator(state, "no")
@@ -393,14 +402,15 @@ def createRoom():
                         response = "I can't hear you, can you try again?"
     
 
-        pygame.draw.rect(screen, background_color, input_rect)
+        # pygame.draw.rect(screen, second_theme_color, input_rect)
+        screen.blit(input_rect,((screen_width-rect_width)/2, 400) )
 
 
-        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.FILL_IN_PASSWORD.value, 10, 4 ]:
-            tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect.topleft[0], input_rect.topleft[1], 330, 175)
-            cross_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect.topright[0]/2, input_rect.topleft[1], 330,175)
+        if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value,10 ]:
+            tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect_surface.x, input_rect_surface.y, 330, 175)
+            cross_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect_surface.x/2, input_rect_surface.y, 330,175)
 
-        blit_text(screen, user_input, input_rect.topleft, medium_font, (255,0,255))
+        blit_text(screen, user_input, ((screen_width-rect_width)/2+50, 410), medium_font, (255,0,255))
 
         blit_text(screen, response, (50,200), medium_font, black)
         if response != "":
@@ -429,7 +439,9 @@ def playLevel(room):
     # Input Rectangle
     rect_width = screen_width-100
     rect_height = screen_height/4
-    input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
+    # input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
+    input_rect = pygame.image.load("./images/speechbox.png")
+    input_rect = pygame.transform.scale(input_rect, (rect_width, rect_height))
     
     # Input and Response
     user_input = ""
@@ -456,8 +468,8 @@ def playLevel(room):
             vr.textToSpeech(vr.generateResponse(description))
             play_counter+=1
 
-        mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 30, 30)
-        redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, (255,0,255), black, button_font)
+        mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 40, 40)
+        redo = create_button("REDO", screen_width-150, screen_height-100, 100, 40, red)
 
         if redo:
             user_input = ""
@@ -490,11 +502,13 @@ def playLevel(room):
                         user_input = ""
                         response = "I can't hear you, can you try again?"
     
-        pygame.draw.rect(screen, background_color, input_rect)
+        # pygame.draw.rect(screen, second_theme_color, input_rect)
+        screen.blit(input_rect,((screen_width-rect_width)/2, 400) )
+
         # text_surface = medium_font.render(user_input, True, (255, 0, 255))
         # screen.blit(text_surface,input_rect.topleft)
 
-        blit_text(screen, user_input, (input_rect.topleft[0]+10, input_rect.topleft[1]+10), medium_font, (255,0,255))
+        blit_text(screen, user_input, ((screen_width-rect_width)/2+50, 410), medium_font, (255,0,255))
         
         blit_text(screen, response, (50,300), medium_font, black)
         if response != "":

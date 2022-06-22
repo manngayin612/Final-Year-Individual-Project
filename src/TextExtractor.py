@@ -2,7 +2,7 @@ import spacy
 import VoiceRecognitionUtils as vr
 import time
 debug = False
-eval = True
+eval = False
 
 def ContentExtractor(text):
     nlp = spacy.load("en_core_web_sm")

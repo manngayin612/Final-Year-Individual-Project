@@ -13,7 +13,7 @@ import VoiceRecognitionUtils as vr
 from States import States, states_dict
 
 import time
-debug = False
+debug = True
 eval = False
 
 
@@ -155,7 +155,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
     if debug: print("Check if all fields are completed. {} {}".format(item, type))
 
-    state, change_state, new_pairs = isEntryCompleted(state+1, cur,room_name, item, type, extra_input)
+    state, change_state, new_pairs = isEntryCompleted(state, cur,room_name, item, type, extra_input)
     if change_state:
         prompt, _  = change_state
         return (state, (prompt, False),())
@@ -192,7 +192,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
             unlock_action = row[2]
             print(required_item)
             if required_item == None:
-                return (States.ASK_FOR_UNLOCK_ITEM.value-2, (states_dict[States.ASK_FOR_UNLOCK_ITEM], False),{})
+                return (States.ASK_FOR_UNLOCK_ITEM.value-1, (states_dict[States.ASK_FOR_UNLOCK_ITEM], False),{})
     else:
         if debug: print("Everything is fine")
         return (state, (), {})
@@ -203,12 +203,12 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
         print(extra_input)
         if extra_input == "no":
             if debug: print("Filling in the unlock")
-            return (States.FILL_IN_UNLOCK_ITEM.value-2, (states_dict[States.FILL_IN_UNLOCK_ITEM], False), {})
+            return (States.FILL_IN_UNLOCK_ITEM.value-1, (states_dict[States.FILL_IN_UNLOCK_ITEM], False), {})
         elif extra_input == "yes":
             if debug: print("filling in password")
-            return (States.FILL_IN_PASSWORD.value-2, (states_dict[States.FILL_IN_PASSWORD], False), {})
+            return (States.FILL_IN_PASSWORD.value-1, (states_dict[States.FILL_IN_PASSWORD], False), {})
         else :
-            return (States.ASK_FOR_UNLOCK_ITEM.value -2, ("Please only answer yes or no", False), {})
+            return (States.ASK_FOR_UNLOCK_ITEM.value -1, ("Please only answer yes or no", False), {})
     
     if debug: print("after type = unlock", state)
     if state == States.FILL_IN_UNLOCK_ITEM.value:
@@ -220,7 +220,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
         unlock_action = a[0]
 
         if unlock_msg == None:
-            return (States.CONGRATS_MSG.value-2, (states_dict[States.CONGRATS_MSG], False), {})
+            return (States.CONGRATS_MSG.value-1, (states_dict[States.CONGRATS_MSG], False), {})
 
     elif state == States.FILL_IN_PASSWORD.value:
         if debug: print("filled in password")
@@ -230,7 +230,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
         if debug: print(pair)
 
         if unlock_msg == None:
-            return (States.CONGRATS_MSG.value-2, (states_dict[States.CONGRATS_MSG], False), {})
+            return (States.CONGRATS_MSG.value-1, (states_dict[States.CONGRATS_MSG], False), {})
 
     if state == States.CONGRATS_MSG.value:
         if debug: print("unlock_msg: ", extra_input)
@@ -314,7 +314,7 @@ def startGenerator(state, user_input):
             if len(pairs_queue)>0:
                 (o,(a,t)) = pairs_queue[0]
                 if debug: print("state: ", state)
-                if state == States.INPUT_PROCESS.value  or state == States.UPDATE_STORED_ITEM.value or state == States.FILL_IN_UNLOCK_ITEM.value-2 or state == States.FILL_IN_PASSWORD.value-2 or  state == States.CONGRATS_MSG.value-2:
+                if state == States.INPUT_PROCESS.value  or state == States.UPDATE_STORED_ITEM.value or state == States.FILL_IN_UNLOCK_ITEM.value-2 or state == States.FILL_IN_PASSWORD.value-2 or  state == States.CONGRATS_MSG.value-1:
                     if debug: print(" extra_input: ", user_input)
                     extra_input = user_input
                 if debug: print(o, a, pairs_queue)
