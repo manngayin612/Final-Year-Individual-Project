@@ -8,8 +8,7 @@ from collections import deque
 import VoiceRecognitionUtils as vr
 from States import States, states_dict
 
-import time
-debug = False
+debug = True
 
 
 # Normal items: name, item_def, actions, description
@@ -158,13 +157,11 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
     global required_item, unlock_action, unlock_msg
     pair = {}
     if type == "unlock":
-
-        if state == States.CREATE_NEW_ITEMS.value:
+        if state == States.CREATE_NEW_ITEMS.value-1:
             if debug: print("getting entry from database")
             get_record = """SELECT required_items, unlock_msg, unlock_action FROM {} WHERE item=? and type = ?;""".format(room_name)
             result = cur.execute(get_record, (item,type,))
             row = result.fetchone()
-
             required_item = row[0]
             unlock_msg = row[1]
             unlock_action = row[2]
@@ -219,6 +216,7 @@ def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
             if debug: print("{} is the escape item".format(item))
             update_query = '''UPDATE {} SET required_items = ? WHERE item="room"'''.format(room_name)
             cur.execute(update_query, (item,))
+
     if required_item:
         if required_item.isdigit():
             type = "numberlock"
@@ -287,7 +285,8 @@ def startGenerator(state, user_input):
             if len(pairs_queue)>0:
                 (o,(a,t)) = pairs_queue[0]
                 if debug: print("state: ", state)
-                if state == States.INPUT_PROCESS.value  or state == States.UPDATE_STORED_ITEM.value or state == States.FILL_IN_UNLOCK_ITEM.value-2 or state == States.FILL_IN_PASSWORD.value-2 or  state == States.CONGRATS_MSG.value-1:
+
+                if state in [States.INPUT_PROCESS.value, States.UPDATE_STORED_ITEM.value, States.CREATE_NEW_ITEMS.value, States.ASK_FOR_UNLOCK_ITEM.value, States.FILL_IN_UNLOCK_ITEM.value, States.FILL_IN_PASSWORD.value]:
                     if debug: print(" extra_input: ", user_input)
                     extra_input = user_input
                 if debug: print(o, a, pairs_queue)

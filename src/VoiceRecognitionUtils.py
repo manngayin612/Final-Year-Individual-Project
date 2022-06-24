@@ -1,33 +1,19 @@
-from json import tool
-from tokenize import Token
 import spacy
 import neuralcoref
 from spacy.matcher import Matcher
-# import neuralcoref
 import speech_recognition as sr
-from sympy import hyper
 from Input import Input
 import ChatGenerator 
-from random import randrange
 import VoiceRecognitionUtils as vr
 from sentence_transformers import SentenceTransformer, util
 import pyttsx3
-from gtts import gTTS
-
-
 from nltk.corpus import wordnet as wn
 
 
-# from spacy import displacy
-
-from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
-import time
-
-debug = True
+debug = False 
 
 
 def recogniseSpeech():
-
     r = sr.Recognizer()
 
     # Get audio from microphone
@@ -128,11 +114,7 @@ def identifyVerb(nlp, input):
     matcher = Matcher(nlp.vocab)
 
     pattern1 = [{"POS":"VERB"}, {"POS":"PART", "OP":"*"}, {"POS":"ADV", "OP":"*"}]
-    pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}, 
-
-                # {"POS": "DET", "OP":"*"},
-                # {"POS": "AUX", "OP":"*"}, {"POS":"ADJ", "OP":"*"}, {"POS": "ADV", "OP":"*"}
-                ]
+    pattern2 = [{"POS":"VERB"}, {"POS":"ADP", "OP":"*"}]
 
     matcher.add("verb", [pattern1, pattern2])
 
@@ -165,7 +147,6 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
     temp_tools = []
 
     for token in doc:
-        # if debug: print(token.text,token.dep_, token.head.head.lemma_)
 
         if str(token) in nouns:
             matches[token.lemma_] = ([],"")
@@ -182,16 +163,11 @@ def matchObjectWithAction(matches, nlp, sent, nouns, verbs, tools):
     return matches
 
 
-
-def getRoot(nlp, sent):
-    # doc = nlp(sent)
-    return sent.root
-
 def getSpanText(doc, start, end):
     return str(doc[start:end])
-        
+
+# Find the longest phrases from the matches      
 def findLongestSpan(nlp, doc, matches):
-    
     new_matches = []
     if len(matches) > 0:
         longest_span = matches[0]
@@ -208,7 +184,6 @@ def findLongestSpan(nlp, doc, matches):
                     longest_span = (match_id, prev_start, end)
                 else:
                     if getSpanText(doc, longest_span[1], longest_span[2]) not in new_matches:
-                        # if debug: print("Add {} to new_matches".format(longest_span))
                         new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
                     new_matches.append(getSpanText(doc, longest_span[1], longest_span[2]))
                     longest_span = (match_id, start, end)
@@ -220,7 +195,6 @@ def findLongestSpan(nlp, doc, matches):
 def sentenceSimilarity(sent1, sent2):
     sentences = [sent1, sent2]
     model = SentenceTransformer('distilbert-base-nli-mean-tokens')
-    # sentences = ['you escaped', 'where is the key', 'there is a key inside', 'bye', 'you are free now', 'there is a new room waiting for you']
     sentence_embeddings = model.encode(sentences)
     similarity = util.pytorch_cos_sim(sentence_embeddings[0], sentence_embeddings[1])
     if debug: print(similarity)
@@ -267,8 +241,9 @@ def processSpeech(input):
     if debug: print("Input result from identifyActionsAndObjects: ", inputs)
     return inputs
 
-def isSimilarWord(stored_word, input_word, pos):
 
+# Check if word is in the synonyms or hypernyms list of the stored_word
+def isSimilarWord(stored_word, input_word, pos):
     if pos == "n":
         if debug: print("searching items synonyms")
         synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.NOUN)])
@@ -282,7 +257,7 @@ def isSimilarWord(stored_word, input_word, pos):
     
     return input_word in synonyms or input_word in hypernyms
 
-    
+# Paraphrasing Text
 def generateResponse(text):
     responses = ChatGenerator.pegasus_paraphraser(text)
     if debug: print(text, "--", responses[0])

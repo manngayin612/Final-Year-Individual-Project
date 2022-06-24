@@ -1,25 +1,14 @@
-
-from py import process
-from ChatGenerator import pegasus_paraphraser
 import VoiceRecognitionUtils as vr 
-from Item import CombinableItem, Item, NumberLock, UnlockItem
 from Room import Room
-from Input import Input
 import RoomGenerator as rg
 from States import States, states_dict
-
-
-import json
-import time
 
 import sqlite3
 
 from nltk.corpus import wordnet as wn
 import pygame
-import math
 import sys
-import os
-import time
+
 
 
 
@@ -281,6 +270,8 @@ def createRoom():
     input_rect = pygame.image.load("./images/speechbox.png")
     input_rect = pygame.transform.scale(input_rect, (rect_width, rect_height))
     input_rect_surface = input_rect.get_rect()
+    input_rect_x = (screen_width-rect_width)/2
+    input_rect_y = 400
     
     # Creating the log file for room generator
     file = open("room_generator_log.txt","r+")
@@ -329,13 +320,13 @@ def createRoom():
 
                 # Creating yes/no buttons
                 if tick_img:
-                    if tick_img.collidepoint(x,y) and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, 4, States.FILL_IN_PASSWORD.value, 10]:
+                    if tick_img.collidepoint(x,y) and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, States.FILL_IN_PASSWORD.value, States.ADD_MORE.value]:
                         current_state, response, finished = rg.startGenerator(state, "yes")
                         state = current_state
                         play_counter = 1
                         
                         
-                if cross_img and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, 4, States.FILL_IN_PASSWORD.value, 10]:
+                if cross_img and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value,  States.FILL_IN_PASSWORD.value, States.ADD_MORE.value]:
                     if cross_img.collidepoint(x,y):
                         current_state, response, finished = rg.startGenerator(state, "no")
                         state = current_state
@@ -349,13 +340,13 @@ def createRoom():
                         user_input = ""
                         response = "I can't hear you, can you try again?"
     
-        screen.blit(input_rect,((screen_width-rect_width)/2, 400) )
+        screen.blit(input_rect,(input_rect_x, input_rect_y) )
 
         if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value,10 ]:
-            tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect_surface.x, input_rect_surface.y, 330, 175)
-            cross_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect_surface.x/2, input_rect_surface.y, 330,175)
+            tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect_x, input_rect_y, 330, 175)
+            cross_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect_x+300, input_rect_y, 330,175)
 
-        blit_text(screen, user_input, ((screen_width-rect_width)/2+50, 410), medium_font, (255,0,255))
+        blit_text(screen, user_input, (input_rect_x+50, input_rect_y +10), medium_font, (255,0,255))
         blit_text(screen, response, (50,200), medium_font, black)
 
         # Read the response out loud
@@ -481,7 +472,7 @@ if __name__ == "__main__":
         if debug: print("Room Initialised.")
         titleScreen()
 
-    else:
+    # else:
         # Check processSpeech and processAction functions
         # initialiseGame()
         # rooms[1].initialiseRoom()
