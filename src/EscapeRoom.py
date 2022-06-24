@@ -21,57 +21,55 @@ import sys
 import os
 import time
 
-voice_input = False
-test = False
+
 
 threshold = 0.2
+cache_size = 5
+cache = []
 rooms=[]
 
 debug = False
-eval = False
+test = False
 room_to_play = "./room_database/largeroom.sqlite"
 
 
-
-
-#Initialising the game screen
+# Initialising game screen
 pygame.init()
 pygame.mixer.init()
 pygame.font.init()
+
+# Variables for the pygame screen
 SQUARESIZE = 100
 screen_width = 7 * SQUARESIZE
 screen_height = 7 * SQUARESIZE
 size = (screen_width, screen_height)
 
 screen = pygame.display.set_mode(size)
-pygame.display.set_caption("Escape Room")
+pygame.display.set_caption("Voice Recognition Escape Room")
 
-
+# Fonts
 font = pygame.font.Font("orange juice 2.0.ttf", 65)
 medium_font = pygame.font.SysFont("Courier", 20)
 small_font = pygame.font.SysFont("Courier", 15)
-
 button_font = pygame.font.Font("BiteBullet.ttf", 45)
 
+# Colours
 white = (255, 255, 255)
 black = (0,0,0)
 main_theme_color = (255,255,255)
-second_theme_color = (19, 38,47)
 yellow = (249,220, 92, 50)
 red = (144, 78, 85, 30)
 
 
 
+# Connect to SQLite Database and initialise rooms
 def initialiseGame():
-
-    if eval: start_time = time.process_time()
     open('user_input_log.txt', 'w').close()
     con = sqlite3.connect(room_to_play)
     cur = con.cursor()
 
     select_room = '''SELECT name FROM sqlite_master WHERE type='table';'''
     result = cur.execute(select_room).fetchall()
-    if debug: print("Rooms created: ",result)
 
     for r in result:
         room = Room(r[0], 1, [])
@@ -80,50 +78,44 @@ def initialiseGame():
         room.initialiseRoom(result)
         rooms.append(room)
     if debug: print(rooms)
-    if eval : print("Initialise Game:", time.process_time()- start_time)
 
+
+# Identify item as room objects
 def identifyObject(room, item):
     if item == "":
         return "I am not sure which item are you referring to, can you try again?"
 
-    #Check cache first=
-    if eval: start_time = time.process_time()
+    # Cache Search
     objectFromCache = searchCache(item)
-    if eval: print("Object Cache Search: ", time.process_time() - start_time)
     if objectFromCache != "":
         if debug: print("Got from Cache")
         for i in room.items_in_room:
             if i.getName() == objectFromCache:
                 return i
     else:
-
-        if eval: start_time = time.process_time()
         max_similarity = 0
-        max_wup = 0
         matching_obj_index = -1
         for i in range(len(room.items_in_room)):
-
+            # Check if in synonyms or hypernyms list
             if vr.isSimilarWord(room.items_in_room[i].getName(), item, "n"):
                 if debug: print(item, room.items_in_room[i].getName(), {"found in synonyms or hypernyms"})
                 writeToCache(room.items_in_room[i].getName(), item)
                 return room.items_in_room[i]
             else:
-
+                # Check similarity scores
                 for ss in wn.synsets(item, pos=wn.NOUN):
                     if(ss.name().split(".")[0] == item):
-                        # Check similarity
-                        if debug: print(ss.name(), room.items_in_room[i].getItemDef())
                         current_similarity = ss.lch_similarity(wn.synset(room.items_in_room[i].getItemDef()))
-                        if debug: print("similarity check: ", room.items_in_room[i], current_similarity)
+                        if debug: print("Similarity check: ", room.items_in_room[i], current_similarity)
                         if current_similarity > max_similarity :
                             max_similarity = current_similarity
-
                             matching_obj_index = i
             
                 identified_obj = room.items_in_room[matching_obj_index]
                 
-        if debug: print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity, max_wup))
-        if eval: print("Computing Similarity for object: ", time.process_time() - start_time)
+        if debug: print("Input Item: {} ==> Identified Item: {} ({})".format(item, identified_obj.getName(), max_similarity))
+
+        # Write to cache if a pair is found
         if max_similarity > 1.8:
             writeToCache(identified_obj.getName(), item)
             return identified_obj
@@ -131,19 +123,14 @@ def identifyObject(room, item):
             return "{} is not found in the room".format(item)
 
 
-
+# Identify the input action from the items' available input
 def identifyAction(action, item):
     # Check in Cache
     if action == "":
         return ""
 
-    if eval: start_time = time.process_time()
     actionFromCache = searchCache(action)
-    if eval: print("Action Cache Search: ", time.process_time() - start_time)
-
-    if debug: print(actionFromCache)
     if actionFromCache != "":
-        if debug: print("Found action from cache")
         return actionFromCache
     elif action in item.getActions():
         return action
@@ -151,22 +138,20 @@ def identifyAction(action, item):
 
         max_similarity = 0
         matching_action = ""
-        if eval: start_time = time.process_time()
         for assigned_action in item.getActions():
-            
+            # Search in synonyms or hypernyms list
             if vr.isSimilarWord(assigned_action, action,"v"):
                 if debug: print("Found in Synonyms or Hypernyms")
                 return assigned_action
             else:
+                # Calculate similarity scores
                 if debug: print("Calculting similarity")
-                if eval: start_time = time.process_time()
                 for ss in wn.synsets(action, pos=wn.VERB):
                     for assigned_ss in wn.synsets(assigned_action, pos=wn.VERB):
                         current_similarity = ss.lch_similarity(wn.synset(assigned_ss.name())) 
                         if current_similarity > max_similarity:
                             max_similarity = current_similarity
                             matching_action = assigned_action
-        if eval: print("Calculate similarity for action: ", time.process_time() - start_time)
         if debug: print("Input Action: {} ==> Identified Action: {}".format(action, matching_action))
         if max_similarity > threshold:
             writeToCache(matching_action, action)
@@ -174,25 +159,16 @@ def identifyAction(action, item):
         else:
             ""
 
-
+# Match the object and action to existing room object, and perform identified action on the item
 def processAction(room, processed_input):
-    msg = ""
-    # for (action, direct_object, pw) in actions_dobjects_pw:
-    if eval : start_time = time.process_time()
     identified_item = identifyObject(room, processed_input.item)
     if isinstance(identified_item, str):
         return identified_item
     else:
         processed_input.item = identified_item
-    if eval: print("Total Time of identifying Object: ", time.process_time() - start_time)
-
-    
-    if debug: print("Processed_input item in processAction()", processed_input.item.getActions())
-    if eval : start_time = time.process_time()
     
     if processed_input.tool != "":
         processed_input.tool = identifyObject(room, processed_input.tool)
-        if debug: print("Processed_input tools ", processed_input.tool.getName())
 
     identified_action = identifyAction(processed_input.action, processed_input.item)
     if identified_action == "":
@@ -200,18 +176,10 @@ def processAction(room, processed_input):
     else:
         processed_input.action = identified_action
 
-    if debug: print(processed_input.action)
-
-    result = processed_input.item.performAction(room , processed_input)
-
-    if eval: print("Total Time of Identifying Actions: ", time.process_time() - start_time)
-    return result
+    return processed_input.item.performAction(room , processed_input)
 
     
-cache_size = 5
-cache = []
 def searchCache(word):
-
     for (new_word, stored_word) in cache:
         if new_word == word:
             return stored_word
@@ -222,13 +190,12 @@ def writeToCache(word, new_word):
     if len(cache) > cache_size:
         cache.pop()
 
+#-------------------Pygame Utils-----------------------#
+# Create text button in pygame
 def create_button(text, x, y, width, height, hovercolour):
     mouse = pygame.mouse.get_pos()
-
     click = pygame.mouse.get_pressed(3)
 
-    # bg_rect = pygame.Rect(x,y+50,width,10)
-    # pygame.draw.rect(screen, defaultcolour, bg_rect)
 
     if x + width > mouse[0] > x and y + height > mouse[1] > y:
         bg_rect = pygame.Rect(x,y+30,width-50,8)
@@ -239,26 +206,23 @@ def create_button(text, x, y, width, height, hovercolour):
     buttontext = button_font.render(text, True, black)
     screen.blit(buttontext, (x, y))
     
+# Create image button in pygame
 def create_image_button(image, x, y, width, height):
-    mouse = pygame.mouse.get_pos()
-    click = pygame.mouse.get_pressed(3)
 
     img = pygame.image.load(image)
     img = pygame.transform.scale(img, (width, height))
 
     bg_rect = pygame.Rect(x,y,img.get_width(),img.get_height())
     pygame.draw.rect(screen, main_theme_color, bg_rect)
-    
-    # if x + img.get_width() > mouse[0] > x and y + img.get_height() > mouse[1] > y:
-    #     if click[0] == 1:
-    #         return True
+
     screen.blit(img, bg_rect)
     return img.get_rect(topleft=(x,y))
 
 
+# Displaying text and move to next line automatically if it exceeded the defined width
 def blit_text(surface, text, pos, font, color=pygame.Color('black')):
-    words = [word.split(' ') for word in text.splitlines()]  # 2D array where each row is a list of words.
-    space = font.size(' ')[0]  # The width of a space.
+    words = [word.split(' ') for word in text.splitlines()]
+    space = font.size(' ')[0]
     max_width, max_height = surface.get_size()
     x, y = pos
     for line in words:
@@ -266,12 +230,12 @@ def blit_text(surface, text, pos, font, color=pygame.Color('black')):
             word_surface = font.render(word, 0, color)
             word_width, word_height = word_surface.get_size()
             if x + word_width >= max_width-70:
-                x = pos[0]  # Reset the x.
-                y += word_height  # Start on new row.
+                x = pos[0]  
+                y += word_height
             surface.blit(word_surface, (x, y))
             x += word_width + space
-        x = pos[0]  # Reset the x.
-        y += word_height  # Start on new row.
+        x = pos[0]
+        y += word_height 
 
 
 
@@ -303,36 +267,27 @@ def titleScreen():
         pygame.display.update()
 
 
-def read_aloud():            
-    sound_obj = pygame.mixer.Sound("speech.mp3")
-    if debug: print(sound_obj.get_length())
-    sound_obj.play()
 
-    time.sleep(math.ceil(sound_obj.get_length()))
 
 def createRoom():
-    
     # os.remove("escaperoom.sqlite")
-    if eval: start_time = time.process_time()
     state = States.NAME_ROOM.value
     title_text = states_dict[States(state)]
-    # title_text = medium_font.render(states_dict[States(state)], True, black)
 
-    # Input Rectangle
+    # Creating the input rectangle for user input
     rect_width = screen_width-100
     rect_height = screen_height/4
-    # input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
+
     input_rect = pygame.image.load("./images/speechbox.png")
     input_rect = pygame.transform.scale(input_rect, (rect_width, rect_height))
     input_rect_surface = input_rect.get_rect()
-
-
+    
+    # Creating the log file for room generator
     file = open("room_generator_log.txt","r+")
     file.truncate(0)
     file.close()
 
     f = open("room_generator_log.txt", "a")
-
 
     user_input = ""
     response = ""
@@ -345,10 +300,8 @@ def createRoom():
     while not finished:
         screen.fill(main_theme_color)
         if response == "":
-            # screen.blit(title_text, (50, 200))
             blit_text(screen, title_text, (50,200), medium_font, black)
             if (play_counter == 0):
-                # read_aloud()
                 vr.textToSpeech(states_dict[States(state)])
                 play_counter += 1
             
@@ -358,12 +311,7 @@ def createRoom():
         if redo:
             user_input = ""
 
-     
-
         for event in pygame.event.get():
-            # if event.type == pygame.QUIT:
-            #     pygame.quit()
-            #     sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
                     user_input = user_input[:-1]
@@ -371,7 +319,6 @@ def createRoom():
                     current_state, response, finished = rg.startGenerator(state, user_input)
                     if debug: print(current_state)
                     user_input = ""
-                    
                     state = current_state
                     play_counter = 1
 
@@ -380,6 +327,7 @@ def createRoom():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 (x, y) = event.pos
 
+                # Creating yes/no buttons
                 if tick_img:
                     if tick_img.collidepoint(x,y) and state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value, 4, States.FILL_IN_PASSWORD.value, 10]:
                         current_state, response, finished = rg.startGenerator(state, "yes")
@@ -401,18 +349,16 @@ def createRoom():
                         user_input = ""
                         response = "I can't hear you, can you try again?"
     
-
-        # pygame.draw.rect(screen, second_theme_color, input_rect)
         screen.blit(input_rect,((screen_width-rect_width)/2, 400) )
-
 
         if state in [States.INPUT_PROCESS.value, States.CREATE_NEW_ITEMS.value,10 ]:
             tick_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/tick.png", input_rect_surface.x, input_rect_surface.y, 330, 175)
             cross_img = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/cross.png", input_rect_surface.x/2, input_rect_surface.y, 330,175)
 
         blit_text(screen, user_input, ((screen_width-rect_width)/2+50, 410), medium_font, (255,0,255))
-
         blit_text(screen, response, (50,200), medium_font, black)
+
+        # Read the response out loud
         if response != "":
             title_text = ""
             if play_counter == 1:
@@ -420,18 +366,14 @@ def createRoom():
                 play_counter += 1
 
         pygame.display.flip()
-    if eval: print("Room Generator: ", time.process_time() - start_time )
     if debug: print("end of loop")
     titleScreen()
 
 
-# Content of the first room
+# Playing the game
 def playLevel(room):
-    # Title of the room
     title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, black)
-
     introduction = "Welcome to the {}. Listen up, you better be careful here. No one's here to protect you. I will give you guide, even though I don't want to. I'll tell you what's happening here, but in case you cannot hear me, open up your eyes and read it yourself. Good luck.".format(room.name.replace("_", " "))
-
     vr.textToSpeech(introduction)
 
     description = room.description
@@ -439,7 +381,6 @@ def playLevel(room):
     # Input Rectangle
     rect_width = screen_width-100
     rect_height = screen_height/4
-    # input_rect = pygame.Rect((screen_width-rect_width)/2, 400, rect_width, rect_height)
     input_rect = pygame.image.load("./images/speechbox.png")
     input_rect = pygame.transform.scale(input_rect, (rect_width, rect_height))
     
@@ -448,18 +389,11 @@ def playLevel(room):
     response = ""
     play_counter = 0
     clock = pygame.time.Clock()
-
-    # Initilise the room with objects
-    con = sqlite3.connect(room_to_play)
-    cur = con.cursor()
-    
-    select_all = '''SELECT * FROM {} ;'''.format(room.name)
-    result = cur.execute(select_all).fetchall()
     
     if debug: print("Room {} is ready with {} items in the room and {} items in the bag.".format(room.level, len(room.currentItems), len(room.bag)))
-    if eval: start_game = time.process_time()
+
+    # Starting game loop
     while not room.success:
-        
         screen.fill(main_theme_color)
         screen.blit(title_text, ((screen_width-title_text.get_width())/2, 50))
 
@@ -479,18 +413,13 @@ def playLevel(room):
                 if event.key == pygame.K_BACKSPACE:
                     user_input = user_input[:-1]
                 elif event.key == pygame.K_RETURN:
-
-                    if debug: print(user_input)
-
+                    # Start processing the input once the user pressed enter
                     processed_inputs = vr.processSpeech(user_input)
-
+                    
                     for input in processed_inputs:
-                        
                         response = processAction(room,input)
-
                     user_input = ""
                     play_counter = 1
-
                 else:
                     user_input +=event.unicode
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -502,41 +431,27 @@ def playLevel(room):
                         user_input = ""
                         response = "I can't hear you, can you try again?"
     
-        # pygame.draw.rect(screen, second_theme_color, input_rect)
         screen.blit(input_rect,((screen_width-rect_width)/2, 400) )
-
-        # text_surface = medium_font.render(user_input, True, (255, 0, 255))
-        # screen.blit(text_surface,input_rect.topleft)
-
         blit_text(screen, user_input, ((screen_width-rect_width)/2+50, 410), medium_font, (255,0,255))
-        
         blit_text(screen, response, (50,300), medium_font, black)
+
+        # Read the response out loud
         if response != "":
             if play_counter == 1:
                 vr.textToSpeech(vr.generateResponse(response))
                 play_counter += 1
 
-        
-        # response_text = small_font.render(response, True, (255,0,0))
-        # screen.blit(response_text, (100,200))
-
-
         pygame.display.flip()
         clock.tick(60)
         room.success = room.succeedCondition()
-    #TODO
-    if eval: print("GAME PLAY: ", time.process_time() - start_game)
     if debug: print("Finished Room")
         
-
     endingScreen(room)
         
 
 def endingScreen(room):
     if debug: print("restarted")
-    # bag = []
-    # current_room_items = room.starting_items
-    # if debug: print(bag, current_room_items)
+
     text = font.render("You escaped!", True, (255,255,255))
 
     while True:
@@ -559,11 +474,9 @@ def endingScreen(room):
         pygame.display.update()
 
 
-import spacy
 
 if __name__ == "__main__":
     if not test:
-        
         initialiseGame()
         if debug: print("Room Initialised.")
         titleScreen()
@@ -591,29 +504,26 @@ if __name__ == "__main__":
 
     # Check item.def
         # check_word = input("Check this word: ")
-        # if debug: print(wn.synsets("pick"))
-        # for ss in wn.synsets("pick", pos=wn.VERB):
-        #     if debug: print(ss.hypernyms()[0])
-
-        #     hypernym = ss.hypernyms()[0]
 
 
-        # if debug: print([str(hypernyms.name().split(".")[0]) for hypernyms in wn.synsets("pick").hypernyms()])
+        # for ss in wn.synsets("painting", pos=wn.NOUN):
+        #     if ss.name().split(".")[0] == "painting":
+        #         print(wn.synsets("painting"))
+        # stored_word = "painting"
 
-        # if debug: print([h.name().split(".")[0]  for ss in wn.synsets("pick", pos=wn.VERB) for h in ss.hypernyms()])
-        # if debug: print([ss.name().split(".")[0] for ss in wn.synsets("pick", pos=wn.VERB)])
-
-
-
-        state = States.NAME_ROOM.value
-        user_input = "Dark Hole"
-        response = ""
-        finished = False
-        while not finished:
-            current_state, response, finished = rg.startGenerator(state, user_input)
-            state = current_state
-            if state != States.FINISHED.value:
-                user_input = input(response)
-            if debug: print(finished)
+        # synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.NOUN)])
+        # hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.NOUN) for h in ss.hypernyms()])
+        # print(synonyms)
+        # print(hypernyms)
+        # state = States.NAME_ROOM.value
+        # user_input = "Dark Hole"
+        # response = ""
+        # finished = False
+        # while not finished:
+        #     current_state, response, finished = rg.startGenerator(state, user_input)
+        #     state = current_state
+        #     if state != States.FINISHED.value:
+        #         user_input = input(response)
+        #     if debug: print(finished)
 
 

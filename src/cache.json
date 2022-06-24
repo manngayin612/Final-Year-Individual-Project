@@ -1,1 +1,1 @@
-{"get": "get", "key": "key", "take": "get", "door": "door", "grab": "get", "1234": "door"}
+{"get": "get", "cupboard": "cupboard", "check": "investigate", "clock": "clock", "table": "table", "box": "box", "inspect": "investigate", "paper": "paper", "examine": "investigate", "unlock": "get", "key": "key", "pick": "get", "card": "card", "floor": "cupboard", "vault": "vault", "tap": "get", "door": "door"}

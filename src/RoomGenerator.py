@@ -1,20 +1,15 @@
 
 import sqlite3
-from regex import P
-
-from setuptools import Require
 import TextExtractor as te
 import spacy
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator 
 from nltk.corpus import wordnet as wn
-from Item import CombinableItem, Item, UnlockItem
 from collections import deque
 import VoiceRecognitionUtils as vr
 from States import States, states_dict
 
 import time
-debug = True
-eval = False
+debug = False
 
 
 # Normal items: name, item_def, actions, description
@@ -24,16 +19,14 @@ def getItemDef(nlp, object):
     token = nlp(object)[0]
     item_def = ""
 
+    # Check if item is in domain
     domain = ["furniture", "home"]
-
     token._.wordnet.wordnet_domains()
-
     in_domain = token._.wordnet.wordnet_synsets_for_domain(domain)
-
     if len(in_domain)>0:
         item_def = in_domain[0].name()
-
     else:  
+        # Otherwise check if have physical object in hypernyms
         if debug: print("Searching for hypernym")
         for ss in wn.synsets(object, pos=wn.NOUN):
             for s in ss.closure(lambda s:s.hypernyms()):
@@ -43,7 +36,6 @@ def getItemDef(nlp, object):
             else:
                 continue
             break
-
     return object, item_def
 
 
@@ -87,8 +79,6 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
             return (state, (prompt, False),())
 
 
-
-    if debug: print("Said yes ", state)
     if state == States.UPDATE_STORED_ITEM.value:
 
         if extra_input == "yes":
@@ -96,37 +86,29 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
 
             if "unlock" in action or "lock" in action:
                 if debug: print("Creating Unlock Item")
-                # item = UnlockItem(item, unlock_msg, item_def, required_items=required_item, action=action, description=description)
                 type = "unlock"
-                #TODO: Special case of a numberlock
 
             elif "combine" in action:
                 if debug: print("Creating Combinable Item")
-                # item = CombinableItem(self, name, item_def, combine_with, finished_item, actions=["get", "combine"], description="")
                 type = "combine"
 
             else:
                 if debug: print("Creating Normal Item")
-                # item = Item(item, item_def, description = description)
                 type = "normal"
 
             action_query = """SELECT action FROM {} WHERE item = ?""".format(room_name)
             stored_action = cur.execute(action_query, (object,)).fetchone()
-            if debug: print(stored_action)
-
 
             stored_type = itemExisted(cur, room_name,  item)
-            #item didnt existed at all
+            # item didnt existed at all
             if not stored_type:
                 # Giving Description to the object
                 prompt = "Maybe try giving me a short description about the {}? Is it locked? Does it give any hint about other objects? Or does it contains something else?".format(object)
-                print("description: ", state)
                 return (state, (prompt, False), ())
 
-            elif stored_type != type: #was initialised as normal item but its an unlock item
+            elif stored_type != type: # was initialised as normal item but its an unlock item
                 if type == "normal":
                     type = stored_type
-                if debug: print("Please update")
                 update_record = """UPDATE {} SET type = ? WHERE item = ?""".format(room_name) 
                 if debug: print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
                 cur.execute(update_record, (type, item,))
@@ -151,8 +133,6 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
         if debug: print("\nCONFIRMING: inserted an {} object: {}\n".format(type, object))
 
 
-            
-
     if debug: print("Check if all fields are completed. {} {}".format(item, type))
 
     state, change_state, new_pairs = isEntryCompleted(state, cur,room_name, item, type, extra_input)
@@ -170,9 +150,7 @@ def createItems(state, con, cur, room_name, object, action, queue, extra_input=N
     if debug: print("Created item: ", queue, " Description: ", description)
     
     return (States.INPUT_PROCESS.value,(),(description, queue))
-# else:
-#     queue.popleft()
-#     return "", queue
+
 
 
 def isEntryCompleted(state, cur, room_name, item, type, extra_input=None):
@@ -290,12 +268,9 @@ def startGenerator(state, user_input):
     
     if state == States.NAME_ROOM.value:
         
-        if debug: print("Naming the Room")
-        if eval: start_time = time.process_time()
         room_name = user_input.replace(" ", "_")
         con, cur = createRoomDatabase(room_name)
         new_state = States(state+1)
-        if eval: print("Create database: ", time.process_time() - start_time)
         if debug: print("DATABASE CREATED SUCCESSFULLY")
         return state+1, states_dict[new_state], finished
 
@@ -304,9 +279,7 @@ def startGenerator(state, user_input):
         if state == States.OVERALL_DESCRIPTION.value:
             if debug: print("Asking for general description...")
             cur.execute('''INSERT INTO {} (item, description) VALUES ("room", ?)'''.format(room_name),(user_input,))
-            if eval: start_time = time.process_time()
             pairs_queue = deque((te.ContentExtractor(user_input)).items())
-            if eval: print("Entire Content Extractor: ", time.process_time() - start_time)
             if debug: print(pairs_queue)
 
         while(not finished):
@@ -319,21 +292,16 @@ def startGenerator(state, user_input):
                     extra_input = user_input
                 if debug: print(o, a, pairs_queue)
 
-                if eval: start_time = time.process_time()
                 (state, change_state, new_pairs_info) = createItems(state+1, con, cur, room_name, o, a, pairs_queue, extra_input)
-                if eval: print("Create Item: ", time.process_time() - start_time)
 
-                if debug: print(change_state, new_pairs_info)
                 if change_state:
                     prompt, finished = change_state
                     return state, prompt, finished
                 else:
                     description_of_item, pairs_queue = new_pairs_info 
-                    if eval: start_time = time.process_time()
                     newpairs = (te.ContentExtractor(description_of_item)).items()
                     pairs_queue.extendleft(newpairs)
-                    if eval: print("Content Extractor: ", time.process_time() - start_time)
-                    if debug: print("NEWPAIRS: ", pairs_queue)
+
                     user_input = ""
                     extra_input = ""
                     state = States.INPUT_PROCESS.value-1
@@ -355,10 +323,8 @@ def startGenerator(state, user_input):
 
                 if state == States.EXTRA_ITEM.value:
                     if debug: print("added extra item", state)
-                    if eval: start_time = time.process_time()
                     newpairs = te.ContentExtractor(vr.lemmatize(nlp,user_input)).items()
                     pairs_queue.extendleft(newpairs)
-                    if eval: print("Content Extractor: ", time.process_time() - start_time)
                     if debug: print("After adding Extra Item: ", pairs_queue)
                     state = States.OVERALL_DESCRIPTION.value
 

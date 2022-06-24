@@ -24,7 +24,7 @@ from spacy_wordnet.wordnet_annotator import WordnetAnnotator
 import time
 
 debug = True
-eval = False
+
 
 def recogniseSpeech():
 
@@ -37,9 +37,7 @@ def recogniseSpeech():
 
     # Recognise Speech by Google Speech Recognition
     try:
-        if eval:start_time =  time.process_time()
         speech = r.recognize_google(audio)
-        if eval: print("Speech-to-Text: ", time.process_time() - start_time)
 
         if debug: print("Result of Google Speech Recognition: {}".format(speech))
         return speech
@@ -60,13 +58,8 @@ def textToSpeech(text):
     engine.stop()
 
 
-
-def identifyActionsAndObjects(nlp, speech):
-    # if debug: print("DETAILS OF SPEECH")
-    # for token in speech:
-    
+def identifyActionsAndObjects(nlp, speech):    
     action = ""
-    subject = ""
     direct_object = ""
     indirect_object = ""
     password = ""
@@ -78,9 +71,7 @@ def identifyActionsAndObjects(nlp, speech):
         if debug: print(token.text, token.pos_, token.dep_, token.head.text)
         if (token.dep_ == "ROOT"):
             root = token
-        # if debug: print(action, direct_object, indirect_object)
         if(token.pos_ == 'VERB'):
-            # action.append(token.text)
             action = token.text
         elif(token.pos_ == 'NOUN'):
             if(token.dep_ == 'dobj'):
@@ -102,7 +93,6 @@ def identifyActionsAndObjects(nlp, speech):
         elif(token.pos_ == "CCONJ"):
             inputs.append(Input(action, direct_object, tool=indirect_object,password=password))
             action = ""
-            subject = ""
             direct_object = ""
             indirect_object = ""
             password = ""
@@ -113,7 +103,6 @@ def identifyActionsAndObjects(nlp, speech):
             continue
     if debug: print("action: ", action,"direct object: ", direct_object, "tool: ",indirect_object)
     
-        
     inputs.append(Input(action, direct_object, tool=indirect_object, password=password))
     
     return inputs
@@ -270,46 +259,31 @@ def processSpeech(input):
     with open("user_input_log.txt", "r") as f:
         log = f.read()
 
-
-    if eval: start_time = time.process_time()
     resolved = coreferenceResolution(nlp, log, max_dist=1)
     current_input = resolved.split("\n")[-2]
 
-    if eval: print("Coreference Resolution: ", time.process_time() - start_time)
-    if debug: print("Result from crefernceREsolution",current_input)
-
-    if eval: start_time = time.process_time()
     inputs = identifyActionsAndObjects(nlp, current_input)
-    if eval: print("Identify object, action and tools from input: ", time.process_time() - start_time)
 
     if debug: print("Input result from identifyActionsAndObjects: ", inputs)
-    # if debug: print("action: ",  action, " subject: ", subject, " direct object: ", direct_object, " indirect object: ", indirect_object, password )     
-
-    # zipped = zip(action, direct_object, password)
     return inputs
 
 def isSimilarWord(stored_word, input_word, pos):
 
     if pos == "n":
         if debug: print("searching items synonyms")
-        if eval: start_time = time.process_time()
         synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.NOUN)])
         hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.NOUN) for h in ss.hypernyms()])
-        if eval: print("Search synonyms and hypernuyms of object: ", time.process_time() - start_time)
         if debug: print(synonyms, hypernyms)
     elif pos =="v":
-        if eval: start_time = time.process_time()
         synonyms = set([ss.name().split(".")[0] for ss in wn.synsets(stored_word, pos=wn.VERB)])
         hypernyms = set([h.name().split(".")[0]  for ss in wn.synsets(stored_word, pos=wn.VERB) for h in ss.hypernyms()])
-        if eval: print("Search synonyms and hypernuyms of action: ", time.process_time() - start_time)
+
     if debug: print(synonyms, hypernyms)
     
     return input_word in synonyms or input_word in hypernyms
 
     
 def generateResponse(text):
-    if eval: start = time.process_time()
     responses = ChatGenerator.pegasus_paraphraser(text)
-    if eval: print("Paraphrase Response: ", time.process_time() - start )
     if debug: print(text, "--", responses[0])
     return responses
