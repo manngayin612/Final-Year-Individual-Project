@@ -19,7 +19,7 @@ rooms=[]
 
 debug = False
 test = False
-room_to_play = "./room_database/largeroom.sqlite"
+room_to_play = "./room_database/demo2.sqlite"
 
 
 # Initialising game screen
@@ -353,7 +353,8 @@ def createRoom():
         if response != "":
             title_text = ""
             if play_counter == 1:
-                vr.textToSpeech(vr.generateResponse(response))
+                # vr.textToSpeech(vr.generateResponse(response))
+                vr.textToSpeech(response)
                 play_counter += 1
 
         pygame.display.flip()
@@ -364,7 +365,7 @@ def createRoom():
 # Playing the game
 def playLevel(room):
     title_text = font.render("Welcome to {}".format(room.name.replace("_", " ")), True, black)
-    introduction = "Welcome to the {}. Listen up, you better be careful here. No one's here to protect you. I will give you guide, even though I don't want to. I'll tell you what's happening here, but in case you cannot hear me, open up your eyes and read it yourself. Good luck.".format(room.name.replace("_", " "))
+    introduction = "Welcome to the {}. Listen up, you better be careful here because no one's here to protect you. Good luck.".format(room.name.replace("_", " "))
     vr.textToSpeech(introduction)
 
     description = room.description
@@ -390,7 +391,8 @@ def playLevel(room):
 
         blit_text(screen, description, (50,200), medium_font, black)
         if play_counter == 0:
-            vr.textToSpeech(vr.generateResponse(description))
+            # vr.textToSpeech(vr.generateResponse(description))
+            vr.textToSpeech(description)
             play_counter+=1
 
         mic = create_image_button("/Users/manngayin/OneDrive - Imperial College London/Fourth Year/Final Year Individual Project/images/microphone.jpeg", screen_width-250, screen_height-100, 40, 40)
@@ -429,7 +431,8 @@ def playLevel(room):
         # Read the response out loud
         if response != "":
             if play_counter == 1:
-                vr.textToSpeech(vr.generateResponse(response))
+                # vr.textToSpeech(vr.generateResponse(response))
+                vr.textToSpeech(response)
                 play_counter += 1
 
         pygame.display.flip()
@@ -450,8 +453,8 @@ def endingScreen(room):
         screen.blit(text, ((screen_width - text.get_width()) /2, 50))
 
         # start button
-        try_again_button = create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 200, 50, (255,255,255), (255,255,0), medium_font)
-        next_level_button = create_button("Next Level", ((screen_width-125)/2), (screen_height+150)/2, 200, 50, (255,255,255), (255,255,0), medium_font)
+        try_again_button = create_button("Try again", ((screen_width-125)/2), (screen_height-35)/2, 200, 50, (255,255,255))
+        next_level_button = create_button("Next Level", ((screen_width-125)/2), (screen_height+150)/2, 200, 50, (255,255,255))
         
         if try_again_button:
             playLevel(rooms[room.level-1])
